@@ -1014,3 +1014,18 @@ Ads, Google Ads, TikTok Ads או LinkedIn Ads. - מודלי ML עצמאיים
 ב-Vitest מול `budgi-dev`.
 
 **השלכות:** התחברות Google נבדקת ידנית. ב-`budgi-prod` הספק כבוי.
+
+### ADR-4: חיבור Vercel בלי Production Deployment ראשון
+
+**הקשר:** ייבוא Repository דרך מסך הייבוא של Vercel יוצר מיד Production
+Deployment מענף ברירת המחדל (`main`), עוד לפני שאפשר לשנות את Production
+Branch. זה סותר את ADR-2 ואת ה-DoD של Milestone 1.
+
+**החלטה:** את פרויקט Vercel יוצרים ומחברים ל-GitHub בדרך שאינה מבצעת
+Deployment (Vercel CLI: `link` ואז `git connect`, שהמשתמש מריץ בעצמו), ורק
+אחר כך משנים את Production Branch ל-`production` ומגדירים משתני Preview.
+גרסת ה-Preview הראשונה נוצרת מ-Push רגיל ל-`main`. אם בזמן החיבור יתברר
+שמסך הייבוא כבר מאפשר לבחור Production Branch לפני ה-Deploy — משתמשים בו.
+
+**השלכות:** אין צורך בקוד או בהגדרה מיוחדת ב-Repository כדי לחסום
+Production. עד Milestone 9 לא קיים אף Production Deployment.

@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Budgi brand palette (DESIGN.md 2.1). Light theme only. */
+:root {
+  --brand-purple: #6b3bff;
+  --brand-violet: #8b5cff;
+  --brand-indigo: #a78bfa;
+  --brand-blue: #00c6ff;
+  --brand-light-blue: #e6f7ff;
+  --brand-dark: #1e1b4b;
+  --brand-gray: #6b7280;
+  --brand-light-gray: #e5e7eb;
+  --brand-background: #f8fafc;
+
+  --status-success: #15803d;
+  --status-warning: #b45309;
+  --status-error: #dc2626;
+
+  /* Button gradient is the only gradient allowed under white text */
+  --gradient-button: linear-gradient(90deg, #5a2ee8, #7c4dff);
+  --gradient-purple: linear-gradient(90deg, #6b3bff, #a78bfa);
+  --gradient-blue: linear-gradient(90deg, #00c6ff, #a78bfa);
+
+  --shadow-card: 0 4px 16px rgba(107, 59, 255, 0.08);
+  --shadow-button: 0 4px 12px rgba(107, 59, 255, 0.2);
+  --shadow-modal: 0 8px 24px rgba(107, 59, 255, 0.12);
+
+  /* shadcn tokens mapped to the brand */
+  --background: var(--brand-background);
+  --foreground: var(--brand-dark);
+  --card: #ffffff;
+  --card-foreground: var(--brand-dark);
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-dark);
+  --primary: var(--brand-purple);
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: var(--brand-purple);
+  --muted: #f1f5f9;
+  --muted-foreground: var(--brand-gray);
+  --accent: #f3efff;
+  --accent-foreground: var(--brand-purple);
+  --destructive: var(--status-error);
+  --border: var(--brand-light-gray);
+  --input: var(--brand-light-gray);
+  --ring: var(--brand-purple);
+  --chart-1: var(--brand-purple);
+  --chart-2: var(--brand-indigo);
+  --chart-3: var(--brand-violet);
+  --chart-4: var(--brand-blue);
+  --chart-5: var(--brand-dark);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-jakarta), var(--font-rubik), sans-serif;
+  --font-heading: var(--font-jakarta), var(--font-rubik), sans-serif;
+
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-violet: var(--brand-violet);
+  --color-brand-indigo: var(--brand-indigo);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-light-blue: var(--brand-light-blue);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-gray: var(--brand-gray);
+  --color-brand-light-gray: var(--brand-light-gray);
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-error: var(--status-error);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-button: var(--shadow-button);
+  --shadow-modal: var(--shadow-modal);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* 12px for cards and buttons, 10px for fields (DESIGN.md 2.4) */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Typography scale (DESIGN.md 2.2) */
+@utility type-h1 {
+  font-size: 2rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+}
+@utility type-h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+}
+@utility type-h3 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+@utility type-h4 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+@utility type-body {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+@utility type-small {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+@utility type-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+@utility bg-gradient-button {
+  background-image: var(--gradient-button);
+}
+@utility bg-gradient-purple {
+  background-image: var(--gradient-purple);
+}
+@utility bg-gradient-blue {
+  background-image: var(--gradient-blue);
+}

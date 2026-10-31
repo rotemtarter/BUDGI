@@ -208,11 +208,11 @@ Recharts מספקת גרפים מתאימים ל-Dashboard. React Hook Form ו-Z
                                                   Requests ב-MVP
   -----------------------------------------------------------------------
 
-**החלטת סביבות מומלצת:** - בתחילת הפיתוח ניתן להקים שני פרויקטי Supabase
-בתוכנית Free, משום שמכסת Free שפורסמה היא שני פרויקטים פעילים. יש להביא
-בחשבון שפרויקט Free עם פעילות נמוכה במשך כשבוע עלול להיעצר אוטומטית.
-השהיה אינה מחיקת נתונים, אך האפליקציה לא תוכל להשתמש בפרויקט עד
-חידושו. - לפני השקת מוצר Production אמיתי, יש להעביר את סביבת Production
+**החלטת סביבות:** - בתחילת הפיתוח מקימים רק את פרויקט `budgi-dev`
+בתוכנית Free. את `budgi-prod` מקימים רק באבן הדרך האחרונה (ראו 7.1). יש
+להביא בחשבון שפרויקט Free עם פעילות נמוכה במשך כשבוע עלול להיעצר
+אוטומטית. השהיה אינה מחיקת נתונים, אך האפליקציה לא תוכל להשתמש בפרויקט
+עד חידושו. - לפני השקת מוצר Production אמיתי, יש להעביר את סביבת Production
 לתוכנית בתשלום כדי למנוע השהיה אוטומטית וליהנות מגיבויים ותמיכה מתאימים
 יותר. יש לבדוק האם שתי הסביבות באותה Organization ובאותה תוכנית או
 בארגונים נפרדים; ב-Supabase תוכנית החיוב חלה ברמת Organization, ולא ניתן
@@ -278,33 +278,37 @@ flowchart TD
 #### Frontend
 
 1.  **Authentication UI** --- התחברות Google, טיפול ב-Session ויציאה.
-2.  **Onboarding & Settings** --- הגדרת תקציב כולל, תקציבי קמפיינים,
-    יעדי הכנסות ויעדים נוספים, וספי התראות.
-3.  **Dashboard** --- KPI cards, גרפי מגמה, טבלת השוואת קמפיינים, קצב
-    תקציב ותחזית.
-4.  **Campaign Management** --- יצירה, עריכה והצגת קמפיינים ונתוני
-    ביצועים.
-5.  **Data Import** --- בחירת קובץ, הצגת שגיאות ייבוא ותוצאת העדכון.
+2.  **Onboarding & Settings** --- הגדרה ראשונית (תקציב כולל ויעדים),
+    ניהול יעדים, ספי התראות, יציאה ומחיקת חשבון.
+3.  **Dashboard** --- מסכי בית, תקציב, מדדים ותחזית: KPI cards, גרפי
+    מגמה שבועיים, טבלאות השוואה.
+4.  **Campaign Management** --- רשימת קמפיינים, יצירה, ומסך פרטי קמפיין
+    עם הזנה ועריכה של נתוני ביצועים שבועיים.
+5.  **Data Import** --- העלאת קובץ, התאמת עמודות, תצוגה מקדימה, אישור
+    ותוצאת הייבוא.
 6.  **Alert Center** --- התראות קופצות והיסטוריית התראות.
 7.  **AI Budget Advisor** --- ממשק שיחה והצגת המלצות מובנות.
+8.  **Legal pages** --- דפי תנאי שימוש ומדיניות פרטיות, נגישים גם ללא
+    התחברות.
 
 #### Backend
 
 1.  **Authentication & Session Layer** --- אימות משתמש ובדיקת Session
     בכל פעולה מוגנת.
-2.  **Campaign Service** --- CRUD לקמפיינים ולנתוני ביצועים.
-3.  **Budget & Goal Service** --- שמירת תקציב כולל, תקציבי קמפיינים
-    ויעדים.
-4.  **Import Service** --- פענוח CSV/Excel, ולידציה, התאמת קמפיין ותקופה
-    וכתיבה מבוקרת.
-5.  **Metrics Service** --- חישוב מדדים מספריים.
-6.  **Forecast Service** --- חישוב תחזית חודשית לפי קצב נוכחי ומגמות
-    היסטוריות זמינות.
+2.  **Campaign Service** --- CRUD לקמפיינים ולשורות ביצועים שבועיות;
+    מחיקת קמפיין רק כשאין לו נתונים.
+3.  **Budget & Goal Service** --- שמירת תקציב כולל חודשי, תקציבי קמפיינים
+    חודשיים ויעדים חודשיים, כולל העתקה אוטומטית לחודש חדש.
+4.  **Import Service** --- פענוח CSV/Excel, התאמת עמודות, ולידציה, זיהוי
+    קמפיין ושבוע, תצוגה מקדימה וכתיבה מבוקרת.
+5.  **Metrics Service** --- חלוקת שבועות לחודשים וחישוב מדדים מספריים.
+6.  **Forecast Service** --- חישוב תחזית חודשית לפי השיטה ב-PRD 4.5.
 7.  **Alert Service** --- הערכת תנאי התראה לאחר שינוי נתונים ושמירת
     התראות.
 8.  **AI Advisor Service** --- בניית הקשר נתונים מצומצם, קריאה ל-OpenAI,
-    ולידציה והחזרת תשובה.
-9.  **Data Access Layer** --- גישה למסד הנתונים דרך Supabase client
+    ולידציה, מגבלת 20 שאלות ביום והחזרת תשובה.
+9.  **Account Service** --- מחיקת חשבון וכל הנתונים.
+10. **Data Access Layer** --- גישה למסד הנתונים דרך Supabase client
     מאובטח.
 
 ### 2.3 מבנה לוגי של הקוד
@@ -316,8 +320,15 @@ src/
   app/
     (auth)/
       login/
+    (legal)/
+      terms/
+      privacy/
     (app)/
+      onboarding/
       dashboard/
+      budget/
+      metrics/
+      forecast/
       campaigns/
       imports/
       alerts/
@@ -354,7 +365,11 @@ src/
     import/
 supabase/
   migrations/
-  tests/
+tests/
+  unit/
+  integration/
+  rls/
+  e2e/
 ```
 
 הדוגמה היא מבנה לוגי מומלץ, לא דרישה למימוש כל תיקייה כיחידה נפרדת. יש
@@ -368,114 +383,57 @@ supabase/
 
 -   PostgreSQL הוא מקור האמת היחיד לנתוני העסק.
 -   כל רשומה עסקית משויכת ל-`user_id` של בעל החשבון.
--   כל הסכומים נשמרים ב-ILS, באמצעות `numeric` ולא `float`, כדי למנוע
-    שגיאות עיגול כספי.
--   נתוני ביצועים נשמרים לפי קמפיין ותקופה, כדי לאפשר השוואות היסטוריות.
+-   כל הסכומים נשמרים ב-ILS, באמצעות `numeric(12,2)` ולא `float`, כדי
+    למנוע שגיאות עיגול כספי. לידים, עסקאות ולקוחות חדשים נשמרים כ-`integer`.
+-   **יחידות זמן קבועות:**
+    -   נתוני ביצועים נשמרים לפי **שבוע**: שורה אחת לכל קמפיין לכל שבוע,
+        מזוהה ב-`week_start` (תאריך של יום ראשון).
+    -   תקציבים ויעדים נשמרים לפי **חודש**: מזוהים ב-`month` (תאריך של
+        היום הראשון בחודש).
+-   שדות ביצועים שלא הוזנו נשמרים כ-`NULL` ולא כ-0, כדי להבדיל בין "לא
+    הוזן" לבין אפס.
 -   `created_at` ו-`updated_at` נשמרים ב-UTC; תצוגה וחישובי גבולות
-    יום/חודש עסקיים יתבצעו לפי אזור הזמן `Asia/Jerusalem`.
+    יום/שבוע/חודש מתבצעים לפי אזור הזמן `Asia/Jerusalem`.
 -   ב-MVP אין ישות Business נפרדת עם חברות צוות: משתמש אחד מנהל עסק אחד.
 
 ### 3.2 ישויות מרכזיות
 
-  --------------------------------------------------------------------------
-  Entity / Table            שדות עיקריים             תפקיד וקשרים
-  ------------------------- ------------------------ -----------------------
-  `profiles`                `id` (UUID, FK           פרופיל משתמש; מזהה
-                            ל-`auth.users`),         המשתמש הוא הבעלים של
-                            `display_name`,          נתוני העסק
-                            `created_at`             
+| Entity / Table | שדות עיקריים | תפקיד וקשרים |
+|---|---|---|
+| `profiles` | `id` (UUID, FK ל-`auth.users`), `display_name`, `email`, `onboarding_completed_at`, `created_at` | פרופיל משתמש; `onboarding_completed_at` ריק עד סיום ההגדרה הראשונית |
+| `budgets` | `id`, `user_id`, `month`, `planned_amount`, `created_at`, `updated_at` | תקציב שיווק כולל לחודש. Unique על `(user_id, month)` |
+| `campaigns` | `id`, `user_id`, `name`, `platform`, `status`, `description`, `created_at`, `updated_at` | קמפיין. `platform` ∈ `meta_ads`, `google_ads`, `tiktok_ads`, `linkedin_ads`. `status` ∈ `active`, `paused`, `ended`. Unique על `(user_id, lower(trim(name)), platform)` |
+| `campaign_budgets` | `id`, `user_id`, `campaign_id`, `month`, `planned_amount`, `updated_at` | תקציב מתוכנן לקמפיין לחודש. Unique על `(campaign_id, month)` |
+| `campaign_performance` | `id`, `user_id`, `campaign_id`, `week_start`, `spend`, `leads`, `deals`, `new_customers`, `revenue`, `source`, `created_at`, `updated_at` | ביצועים לשבוע. `source` ∈ `manual`, `import`. Unique על `(campaign_id, week_start)` --- מונע כפילויות וחפיפות |
+| `business_goals` | `id`, `user_id`, `month`, `goal_type`, `target_value`, `updated_at` | יעד חודשי. `goal_type` ∈ `revenue`, `deals`, `leads`, `min_roas`. Unique על `(user_id, month, goal_type)` |
+| `alert_settings` | `id`, `user_id`, `alert_type`, `threshold_config`, `enabled`, `updated_at` | `alert_type` ∈ `spend_pace`, `budget_overrun`, `performance_drop`, `goal_risk`, `goal_reached`. ערכי ברירת מחדל לפי PRD 4.6. Unique על `(user_id, alert_type)` |
+| `alerts` | `id`, `user_id`, `alert_type`, `severity`, `title`, `description`, `related_campaign_id`, `month`, `dedupe_key`, `deviation`, `created_at`, `read_at` | התראות שנוצרו ונשמרות במרכז ההתראות. `severity` ∈ `info`, `warning`, `critical` |
+| `advisor_usage` | `user_id`, `usage_date`, `question_count` | מונה שאלות יומי למגבלת 20 שאלות. מפתח ראשי `(user_id, usage_date)` |
+| `import_jobs` | `id`, `user_id`, `file_name`, `status`, `rows_total`, `rows_imported`, `rows_rejected`, `campaigns_created`, `error_summary`, `created_at`, `completed_at` | תיעוד תהליך ייבוא ותוצאותיו; קובץ המקור אינו נשמר |
 
-  `business_settings`       `id`, `user_id`,         הגדרות עסק; `currency`
-                            `currency`, `timezone`,  מוגדר `ILS`, אזור זמן
-                            `created_at`,            `Asia/Jerusalem`
-                            `updated_at`             
+**הערות תכנון:**
 
-  `budgets`                 `id`, `user_id`,         תקציב כולל לתקופה; סכום
-                            `period_start`,          ב-ILS
-                            `period_end`,            
-                            `planned_amount`,        
-                            `created_at`,            
-                            `updated_at`             
-
-  `campaigns`               `id`, `user_id`, `name`, קמפיין; `platform`
-                            `platform`, `status`,    מוגבל ל-Meta Ads,
-                            `created_at`,            Google Ads, TikTok Ads
-                            `updated_at`             או LinkedIn Ads
-
-  `campaign_budgets`        `id`, `user_id`,         תקציב מתוכנן לקמפיין
-                            `campaign_id`,           בתקופה
-                            `period_start`,          
-                            `period_end`,            
-                            `planned_amount`         
-
-  `campaign_performance`    `id`, `user_id`,         מדדי ביצועים לתקופה;
-                            `campaign_id`,           `source` מציין manual
-                            `period_start`,          או import
-                            `period_end`, `spend`,   
-                            `leads`, `deals`,        
-                            `new_customers`,         
-                            `revenue`, `source`,     
-                            `created_at`,            
-                            `updated_at`             
-
-  `business_goals`          `id`, `user_id`,         יעדי הכנסות ויעדים
-                            `period_start`,          נוספים הנתמכים בנתונים,
-                            `period_end`,            כגון מספר עסקאות
-                            `goal_type`,             
-                            `target_value`           
-
-  `alert_settings`          `id`, `user_id`,         ספים והפעלה/כיבוי של
-                            `alert_type`,            סוגי התראות
-                            `threshold_config`,      
-                            `enabled`, `updated_at`  
-
-  `alerts`                  `id`, `user_id`,         התראות שנוצרו ונשמרות
-                            `alert_type`,            במרכז ההתראות
-                            `severity`, `title`,     
-                            `description`,           
-                            `related_campaign_id`,   
-                            `dedupe_key`,            
-                            `created_at`, `read_at`  
-
-  `advisor_conversations`   `id`, `user_id`,         שיחות AI, אם נדרשת
-                            `created_at`,            שמירת היסטוריית שיחה
-                            `updated_at`             
-
-  `advisor_messages`        `id`, `conversation_id`, הודעות משתמש ותשובות
-                            `user_id`, `role`,       Advisor; אין לשמור
-                            `content`,               סודות או Tokens
-                            `structured_payload`,    
-                            `created_at`             
-
-  `import_jobs`             `id`, `user_id`,         תיעוד תהליך ייבוא
-                            `file_name`, `status`,   ותוצאותיו; לא מחייב
-                            `rows_total`,            שמירת קובץ המקור
-                            `rows_imported`,         
-                            `rows_rejected`,         
-                            `error_summary`,         
-                            `created_at`,            
-                            `completed_at`           
-  --------------------------------------------------------------------------
-
-**הערות תכנון:** - `campaign_performance` יאפשר כמה רשומות לתקופות
-שונות. יש להגדיר Unique Constraint מתאים על משתמש, קמפיין וטווח תקופה,
-כדי למנוע כפילויות. אם נדרשת תמיכה בפירוט יומי, יש לשמור רשומות לפי יום
-ולא לערבב נתונים יומיים עם סיכומים תקופתיים. - בייבוא, התאמת רשומה קיימת
-תתבצע לפי קמפיין ותקופה. כאשר לא ניתן לזהות התאמה חד-משמעית, יש לדחות את
-השורה או לבקש תיקון במקום לעדכן רשומה שגויה. - `threshold_config` יישמר
-כ-JSONB, אך מבנה הערכים יאומת באמצעות Zod בצד השרת. -
-`structured_payload` ישמור נתונים מובנים של המלצה, למשל קמפיינים
-מעורבים, סכום שינוי, אחוז שינוי, הסבר ורמת ביטחון. טקסט ההמלצה יוצג
-בנפרד. - אם אין צורך עסקי בהיסטוריית שיחות, ניתן להשאיר את שמירת השיחות
-מחוץ ל-MVP ולהחזיר תשובות ללא היסטוריה מתמשכת. אם נשמרת היסטוריה, יש
-לאפשר למשתמש גישה רק לשיחות שלו.
+-   **חלוקת שבוע לחודשים:** החלוקה מחושבת בקוד (Metrics Service) ולא
+    נשמרת. לכל שבוע ולכל חודש: `שווי בחודש = ערך השבוע × (ימי השבוע
+    שבחודש ÷ 7)`. מספרים שלמים שחולקו נשארים שבר בחישוב ומעוגלים רק
+    בתצוגה.
+-   **העתקה לחודש חדש:** כאשר המשתמש ניגש לחודש שאין לו `budgets`,
+    `business_goals` או `campaign_budgets` לקמפיינים פעילים, Budget & Goal
+    Service יוצר אותם מהחודש האחרון שבו הוגדרו. אין צורך ב-Cron.
+-   **מחיקת קמפיין:** מותרת רק כשאין לו שורות ב-`campaign_performance`.
+    הבדיקה נאכפת בשרת וגם ב-DB (Foreign Key עם `ON DELETE RESTRICT` מ-
+    `campaign_performance` ל-`campaigns`).
+-   **בייבוא:** התאמה לקמפיין לפי שם (ללא רישיות ורווחים בקצוות)
+    ופלטפורמה; התאמה לשורה קיימת לפי `(campaign_id, week_start)`.
+-   `threshold_config` יישמר כ-JSONB, אך מבנה הערכים יאומת באמצעות Zod
+    בצד השרת.
+-   שיחות ה-Advisor אינן נשמרות ב-DB; רק מונה השאלות היומי.
 
 ### 3.3 קשרים בין הישויות
 
 ``` mermaid
 erDiagram
     AUTH_USERS ||--|| PROFILES : owns
-    AUTH_USERS ||--|| BUSINESS_SETTINGS : configures
     AUTH_USERS ||--o{ BUDGETS : sets
     AUTH_USERS ||--o{ CAMPAIGNS : owns
     CAMPAIGNS ||--o{ CAMPAIGN_BUDGETS : allocated
@@ -484,25 +442,27 @@ erDiagram
     AUTH_USERS ||--o{ ALERT_SETTINGS : configures
     AUTH_USERS ||--o{ ALERTS : receives
     CAMPAIGNS o|--o{ ALERTS : relates
-    AUTH_USERS ||--o{ ADVISOR_CONVERSATIONS : starts
-    ADVISOR_CONVERSATIONS ||--o{ ADVISOR_MESSAGES : contains
+    AUTH_USERS ||--o{ ADVISOR_USAGE : counts
     AUTH_USERS ||--o{ IMPORT_JOBS : imports
 ```
 
 ### 3.4 אינדקסים ואילוצים
 
 -   אינדקס על `user_id` בכל טבלה עסקית.
--   אינדקס על `(user_id, period_start, period_end)` בטבלאות תקציב, יעדים
-    וביצועים.
--   אינדקס על `(user_id, campaign_id, period_start, period_end)`
-    ב-`campaign_performance`.
--   Foreign Keys עם `ON DELETE CASCADE` עבור נתונים השייכים למשתמש,
-    בכפוף למדיניות מחיקת החשבון.
+-   אינדקס על `(user_id, week_start)` ב-`campaign_performance`, ועל
+    `(user_id, month)` בטבלאות התקציב והיעדים.
+-   Unique constraints כמפורט בטבלה בסעיף 3.2.
+-   `CHECK (extract(dow from week_start) = 0)` --- `week_start` הוא תמיד
+    יום ראשון.
+-   `CHECK (extract(day from month) = 1)` --- `month` הוא תמיד היום הראשון
+    בחודש.
 -   `CHECK` constraints למניעת ערכים שליליים ב-`spend`, `revenue`,
-    `planned_amount`, `leads`, `deals`, `new_customers`.
--   יש לוודא שמספר עסקאות ומספר לקוחות חדשים אינם שליליים; אין להניח
-    שמספר לקוחות חדשים חייב להיות שווה למספר העסקאות.
--   יש לוודא `period_end >= period_start`.
+    `planned_amount`, `target_value`, `leads`, `deals`, `new_customers`.
+-   `CHECK` שבשורת ביצועים לפחות אחד מחמשת השדות המספריים אינו `NULL`.
+-   אין להניח שמספר לקוחות חדשים חייב להיות שווה למספר העסקאות.
+-   Foreign Keys מ-`auth.users` לכל הטבלאות עם `ON DELETE CASCADE`, כך
+    שמחיקת המשתמש מוחקת את כל נתוניו. בין `campaign_performance`
+    ל-`campaigns`: `ON DELETE RESTRICT`.
 -   אין להשתמש ב-`float` לשדות כספיים.
 
 ------------------------------------------------------------------------
@@ -520,52 +480,44 @@ erDiagram
 
 ### 4.2 ממשקי API מרכזיים
 
-  ----------------------------------------------------------------------------------
-  Method                  Endpoint                           תפקיד
-  ----------------------- ---------------------------------- -----------------------
-  `GET`                   `/api/dashboard?from=...&to=...`   החזרת KPI, סיכומים,
-                                                             מגמות ותחזית לתקופה
-
-  `GET`                   `/api/campaigns`                   רשימת קמפיינים של
-                                                             המשתמש
-
-  `POST`                  `/api/campaigns`                   יצירת קמפיין
-
-  `PATCH`                 `/api/campaigns/:id`               עדכון קמפיין
-
-  `DELETE`                `/api/campaigns/:id`               מחיקת קמפיין
-
-  `POST`                  `/api/imports/preview`             פענוח קובץ, בדיקת מבנה
-                                                             והצגת תוצאות/שגיאות
-                                                             לפני שמירה
-
-  `POST`                  `/api/imports/commit`              שמירת שורות תקינות לאחר
-                                                             אימות ואישור משתמש
-
-  `GET`                   `/api/imports/:id`                 סטטוס ותוצאות ייבוא
-
-  `GET`                   `/api/alerts`                      רשימת התראות והיסטוריה
-
-  `PATCH`                 `/api/alerts/:id`                  סימון התראה כנקראה
-
-  `GET` / `PUT`           `/api/alert-settings`              קריאה ועדכון של ספי
-                                                             התראות
-
-  `POST`                  `/api/advisor`                     שליחת שאלה וקבלת
-                                                             ניתוח/המלצה מה-AI
-  ----------------------------------------------------------------------------------
+| Method | Endpoint | תפקיד |
+|---|---|---|
+| `GET` | `/api/dashboard?period=month&value=2026-10` או `?period=week&value=2026-10-25` | KPI, סיכומים ומגמות לחודש או לשבוע |
+| `GET` | `/api/forecast?month=2026-10` | תחזית לחודש (או נתונים בפועל לחודש שהסתיים) |
+| `GET` / `PUT` | `/api/budgets?month=...` | תקציב כולל ותקציבי קמפיינים לחודש |
+| `GET` / `PUT` | `/api/goals?month=...` | יעדים לחודש |
+| `GET` | `/api/campaigns` | רשימת קמפיינים של המשתמש |
+| `POST` | `/api/campaigns` | יצירת קמפיין |
+| `GET` | `/api/campaigns/:id` | פרטי קמפיין ושורות הביצועים השבועיות שלו |
+| `PATCH` | `/api/campaigns/:id` | עדכון קמפיין (כולל סטטוס) |
+| `DELETE` | `/api/campaigns/:id` | מחיקת קמפיין; נדחית אם יש לו נתוני ביצועים |
+| `PUT` | `/api/campaigns/:id/weeks/:weekStart` | יצירה או עדכון של שורת שבוע |
+| `DELETE` | `/api/campaigns/:id/weeks/:weekStart` | מחיקת שורת שבוע |
+| `POST` | `/api/imports/preview` | פענוח קובץ והחזרת כותרות, התאמת עמודות מוצעת ותצוגה מקדימה |
+| `POST` | `/api/imports/commit` | שמירת השורות התקינות ויצירת קמפיינים חדשים לאחר אישור המשתמש |
+| `GET` | `/api/imports/template` | הורדת קובץ הדוגמה |
+| `GET` | `/api/alerts` | רשימת התראות והיסטוריה |
+| `PATCH` | `/api/alerts/:id` | סימון התראה כנקראה |
+| `GET` / `PUT` | `/api/alert-settings` | קריאה ועדכון של ספי התראות |
+| `POST` | `/api/advisor` | שליחת שאלה (עם הודעות השיחה הנוכחית) וקבלת ניתוח/המלצה |
+| `DELETE` | `/api/account` | מחיקת החשבון וכל הנתונים |
 
 הטבלה מתארת חוזה לוגי מוצע. ניתן לממש חלק מהפעולות כ-Server Actions בלי
 Endpoint ציבורי נפרד, כל עוד גבולות האבטחה והאחריות נשמרים.
 
 ### 4.3 חוזה תשובת AI
 
-השרת ידרוש פלט מובנה שכולל, לפי הצורך: - `answer`: הסבר בשפה טבעית
-בעברית. - `recommendations`: מערך המלצות. - `campaign_id` או מזהי
-קמפיינים רלוונטיים. - `action_type`: למשל increase, decrease או
-reallocate. - `amount_ils` ו/או `percentage`. - `rationale`: הסבר מבוסס
-נתונים. - `expected_impact`: הערכה צפויה, אם אפשר לחשב או להעריך. -
-`limitations`: נתונים חסרים והסתייגויות.
+השרת ידרוש פלט מובנה שכולל, לפי הצורך:
+
+-   `answer`: הסבר בשפה טבעית בעברית.
+-   `recommendations`: מערך המלצות, שבכל אחת:
+    -   `campaign_ids`: מזהי הקמפיינים הרלוונטיים.
+    -   `action_type`: `increase`, `decrease` או `reallocate`.
+    -   `amount_ils` ו/או `percentage`.
+    -   `rationale`: הסבר מבוסס נתונים.
+    -   `expected_impact`: הערכה צפויה, אם אפשר לחשב או להעריך.
+-   `limitations`: נתונים חסרים והסתייגויות.
+-   `missing_data_request`: מה המשתמש צריך להזין או לייבא, כשאין די נתונים.
 
 כל פלט יעבור Zod validation לפני החזרה ל-Frontend. ה-AI אינו רשאי לבצע
 פעולות כתיבה לתקציבים או לפלטפורמות פרסום.
@@ -579,64 +531,88 @@ reallocate. - `amount_ils` ו/או `percentage`. - `rationale`: הסבר מבו�
 1.  המשתמש מתחבר באמצעות Google.
 2.  ה-Frontend שולח פעולה לשרת עם Session תקף.
 3.  השרת מאמת את המשתמש ומוודא שכל מזהי הרשומות שייכים אליו.
-4.  הנתונים עוברים ולידציה באמצעות Zod ובדיקות DB constraints.
+4.  הנתונים עוברים ולידציה באמצעות Zod ובדיקות DB constraints. תאריך
+    שבוע מנורמל ליום ראשון של אותו שבוע.
 5.  הנתונים נשמרים ב-PostgreSQL.
-6.  השרת מפעיל Metrics Service ו-Alert Service.
+6.  השרת מפעיל Alert Service. המדדים מחושבים בזמן הקריאה (אין טבלאות
+    סיכום שמורות).
 7.  Dashboard מקבל נתונים מחושבים ומציג מדדים זמינים בלבד.
 
 ### 5.2 ייבוא CSV / Excel
 
 1.  המשתמש בוחר קובץ ומעלה אותו ל-`/api/imports/preview`.
-2.  Route Handler בודק סוג קובץ, גודל, מספר שורות ומבנה בסיסי.
+2.  Route Handler בודק סוג קובץ (CSV/XLSX), גודל (עד 5MB), מספר שורות
+    (עד 5,000) ומבנה בסיסי.
 3.  SheetJS/CSV parser קורא את הנתונים בשרת.
-4.  Import Service ממפה שדות, מנרמל תאריכים ומספרים ומריץ ולידציה.
-5.  המערכת מציגה למשתמש שורות תקינות, שורות שגויות והתאמות אפשריות
-    לרשומות קיימות.
-6.  לאחר אישור המשתמש, `/api/imports/commit` מבצע Upsert מבוקר בתוך
-    Transaction, לפי מפתח ההתאמה שהוגדר.
-7.  מתעדכן `import_jobs`, ומופעלים מחדש Metrics Service ו-Alert Service.
-8.  הקובץ הזמני נמחק בסיום הבקשה/התהליך; אין צורך ב-Persistent File
-    Storage ב-MVP כל עוד לא נדרש לשמור קובצי מקור או דוחות.
+4.  Import Service מציע התאמת עמודות: אוטומטית אם הכותרות תואמות לקובץ
+    הדוגמה, אחרת לפי בחירת המשתמש. ההתאמה הסופית נשלחת מחדש עם הקובץ.
+5.  Import Service מנרמל תאריכים (DD/MM/YYYY או YYYY-MM-DD, ונרמול ליום
+    ראשון), מספרים ושמות פלטפורמה (Facebook/Instagram → Meta Ads), ומריץ
+    ולידציה.
+6.  לכל שורה נקבע סטטוס: חדשה, עדכון לשורה קיימת, שגיאה (עם סיבה), ולכל
+    קמפיין שלא קיים: "ייווצר קמפיין חדש".
+7.  לאחר אישור המשתמש, `/api/imports/commit` יוצר את הקמפיינים החדשים
+    ומבצע Upsert לפי `(campaign_id, week_start)` בתוך Transaction אחת.
+    שדה ריק בקובץ אינו דורס ערך קיים.
+8.  מתעדכן `import_jobs`, ומופעל Alert Service.
+9.  הקובץ אינו נשמר; אין צורך ב-Persistent File Storage ב-MVP.
 
 ### 5.3 חישובי מדדים
 
-החישובים יבוצעו בקוד שרת דטרמיניסטי, ולא באמצעות LLM: -
-`CPL = spend / leads` - `Cost per Deal = spend / deals` -
-`CAC = spend / new_customers` - `ROAS = attributed_revenue / spend` -
-`Remaining Budget = planned_budget - actual_spend`
+החישובים יבוצעו בקוד שרת דטרמיניסטי, ולא באמצעות LLM:
 
-אם המכנה הוא 0 או חסר, התוצאה תהיה `null` / Not Available עם סיבת החוסר.
-יש להציג את המדד רק כאשר הנתונים הנדרשים זמינים.
+-   **סיכום לתקופה:** לשבוע --- ערכי השורה כפי שהם. לחודש --- סכום ערכי
+    השבועות לאחר חלוקה יחסית לפי ימים (ראו 3.2).
+-   `CPL = spend / leads`
+-   `Cost per Deal = spend / deals`
+-   `CAC = spend / new_customers`
+-   `ROAS = revenue / spend`
+-   `Conversion Rate = deals / leads × 100`
+-   `Remaining Budget = planned_budget - actual_spend`
+-   `Budget Gap = total_monthly_budget - Σ campaign_monthly_budgets`
+
+כל מדד מחושב רק משורות שבהן גם המונה וגם המכנה הוזנו (לא `NULL`). אם
+המכנה הוא 0 או חסר, התוצאה תהיה `null` / Not Available עם סיבת החוסר.
 
 ### 5.4 תחזית חודשית
 
--   Forecast Service יחשב תחזית לפי קצב ההוצאות וההכנסות עד כה, וישקלל
-    מגמות מתקופות קודמות כאשר קיימים נתונים היסטוריים מספיקים.
--   החישוב יהיה דטרמיניסטי ומתועד בקוד; ה-AI יוכל להסביר את התחזית אך לא
-    להמציא או לשנות את המספרים.
+Forecast Service מממש את השיטה שב-PRD 4.5:
+
+1.  `covered_days` = מספר ימי החודש מתחילתו ועד סוף השבוע האחרון שיש לו
+    נתונים (לכל הקמפיינים יחד), לכל היותר עד סוף החודש.
+2.  אם `covered_days < 7` --- התחזית `null` עם סיבה "אין מספיק נתונים".
+3.  `pace_forecast = month_to_date / covered_days × days_in_month`.
+4.  אם יש לפחות שני חודשים קודמים עם נתונים, `history_avg` = ממוצע הסכום
+    החודשי של עד שלושת החודשים הקודמים, ו-`forecast = 0.7 × pace_forecast
+    + 0.3 × history_avg`. אחרת `forecast = pace_forecast`.
+5.  התשובה כוללת `basis`: `pace` או `pace_and_history`.
+
+-   התחזית מחושבת להוצאות, להכנסות, ללידים ולעסקאות. ROAS צפוי =
+    הכנסות צפויות ÷ הוצאות צפויות.
 -   יש להפריד בין `actual`, `forecast` ו-`target` בתשובת השרת ובתצוגה.
--   כאשר אין מספיק היסטוריה, המערכת תציג תחזית בסיסית/מוגבלת או תסמן
-    אותה כלא זמינה, בהתאם ליכולת לחשב אותה מהנתונים הקיימים.
--   יש לציין למשתמש שהתחזית היא הערכה ולא הבטחה לתוצאה.
+-   ה-AI יכול להסביר את התחזית אך לא להמציא או לשנות את המספרים.
 
 ### 5.5 תהליך התראות
 
--   לאחר כל שמירה ידנית או Commit של ייבוא, Alert Service בודק את הספים
-    שהוגדרו.
--   בדיקות אפשריות: קצב הוצאות מול התקציב, ירידה במדד ביצועים, התקרבות
-    ליעד או חריגה ממנו.
--   כל התראה תקבל `dedupe_key` שמזהה את סוג ההתראה והישות/תקופה, כדי
-    למנוע יצירה חוזרת של אותה התראה ללא שינוי מהותי.
--   ההתראה נשמרת ב-DB ומוחזרת ל-Frontend; הודעה קופצת מוצגת כאשר המשתמש
-    פעיל.
--   אין צורך ב-Cron או Background Worker ב-MVP, משום שהדרישה היא לבדוק
-    בעת עדכון/ייבוא נתונים ולא באופן מתוזמן.
+-   לאחר כל שמירה ידנית (נתונים, תקציב, יעד) או Commit של ייבוא, Alert
+    Service מחשב את התנאים שב-PRD 4.6 לחודש הנוכחי, לפי `alert_settings`
+    של המשתמש.
+-   `dedupe_key = alert_type + entity (business או campaign_id) + month`.
+    לפני יצירת התראה, השירות בודק אם קיימת התראה עם אותו `dedupe_key`
+    שנוצרה באותו שבוע קלנדרי. אם כן, נוצרת התראה חדשה רק אם `deviation`
+    הנוכחית גדולה מהקודמת לפחות בגודל הסף.
+-   ההתראה נשמרת ב-DB ומוחזרת ל-Frontend בתשובה לפעולת השמירה; הודעה
+    קופצת מוצגת מיד.
+-   אין צורך ב-Cron או Background Worker ב-MVP.
 
 ### 5.6 תהליך AI Budget Advisor
 
-1.  המשתמש שולח שאלה.
-2.  השרת מאמת Session ומגביל את קצב הבקשות (Rate Limiting).
-3.  Advisor Service שולף רק נתונים השייכים למשתמש ורלוונטיים לשאלה.
+1.  המשתמש שולח שאלה, יחד עם ההודעות הקודמות של השיחה הנוכחית (מוגבל
+    ל-10 ההודעות האחרונות). השיחה נשמרת רק בדפדפן ונעלמת ביציאה מהמסך.
+2.  השרת מאמת Session ובודק ב-`advisor_usage` שהמשתמש לא עבר 20 שאלות
+    היום (לפי אזור הזמן של ישראל). אם עבר --- מחזיר הודעה מתאימה בלי לפנות
+    ל-OpenAI.
+3.  Advisor Service שולף רק נתונים השייכים למשתמש.
 4.  Metrics/Forecast Services מחשבים מדדים, מגמות ותחזיות באופן
     דטרמיניסטי.
 5.  השרת בונה Context מצומצם ומסיר פרטים שאינם נחוצים.
@@ -644,8 +620,9 @@ reallocate. - `amount_ils` ו/או `percentage`. - `rationale`: הסבר מבו�
     מפתחות או פרטי Authentication.
 7.  OpenAI מחזיר Structured Output לפי JSON Schema.
 8.  השרת מאמת את הפלט, בודק שמזהי הקמפיינים קיימים ושסכומי ההמלצה אינם
-    חורגים מהנתונים הזמינים.
-9.  השרת מחזיר תשובה בעברית עם הסבר, סכום/אחוז מוצע והסתייגויות.
+    חורגים מהנתונים הזמינים, ומעלה את מונה השאלות.
+9.  השרת מחזיר תשובה בעברית עם הסבר, סכום/אחוז מוצע והסתייגויות, ואת
+    מספר השאלות שנותרו היום.
 10. לא מתבצעת כתיבה אוטומטית לתקציב או לפלטפורמת פרסום.
 
 ------------------------------------------------------------------------
@@ -654,7 +631,8 @@ reallocate. - `amount_ils` ו/או `percentage`. - `rationale`: הסבר מבו�
 
 ### 6.1 Authentication
 
--   Supabase Auth ינהל התחברות Google OAuth.
+-   Supabase Auth ינהל התחברות Google OAuth. זה ספק ההתחברות היחיד
+    בממשק.
 -   יש להגדיר Google OAuth Client ב-Google Cloud Console ולהזין את
     Client ID ו-Client Secret ב-Supabase Dashboard.
 -   יש להגדיר Redirect URLs ל-Development ול-Production בנפרד.
@@ -662,6 +640,12 @@ reallocate. - `amount_ils` ו/או `percentage`. - `rationale`: הסבר מבו�
     בהתאם לתיעוד Supabase ל-Next.js.
 -   דפים מוגנים ופעולות שרת יוודאו Session תקף; אין להסתמך על הסתרת
     מסכים ב-Frontend בלבד.
+-   משתמש מחובר שעדיין לא השלים הגדרה ראשונית (`onboarding_completed_at`
+    ריק) מופנה למסך ההגדרה הראשונית.
+-   **משתמשי בדיקה:** בפרויקט `budgi-dev` בלבד מופעל גם ספק Email/Password
+    של Supabase, עם שני משתמשי בדיקה קבועים. הממשק אינו מציג אפשרות זו;
+    הבדיקות האוטומטיות מתחברות דרכה בקוד (ראו 8.1). ב-`budgi-prod` הספק
+    הזה כבוי.
 
 ### 6.2 Authorization ו-RLS
 
@@ -677,28 +661,33 @@ reallocate. - `amount_ils` ו/או `percentage`. - `rationale`: הסבר מבו�
 -   אין להסתמך על `user_metadata` שניתן לשינוי על ידי משתמש לצורך
     הרשאות.
 -   `service_role` / Secret Key עוקף RLS ויש להשתמש בו רק בקוד שרת
-    למשימות מערכת הכרחיות; אין לחשוף אותו ל-Client. ככל האפשר, פעולות
-    משתמש רגילות יתבצעו עם Session המשתמש ו-RLS.
+    למשימות מערכת הכרחיות --- ב-MVP רק למחיקת חשבון (מחיקת המשתמש
+    מ-`auth.users`). אין לחשוף אותו ל-Client. פעולות משתמש רגילות
+    מתבצעות עם Session המשתמש ו-RLS.
 
 מקור: [Supabase Row Level
 Security](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
 ### 6.3 הגנה על קבצים
 
--   לקבל רק CSV ו-XLSX, ולהגדיר מגבלת גודל ומספר שורות.
+-   לקבל רק CSV ו-XLSX, עד 5MB ועד 5,000 שורות.
 -   לבצע Parsing וולידציה בצד השרת.
 -   לא לסמוך על סיומת הקובץ בלבד; לבדוק MIME/signature ומבנה תוכן ככל
     האפשר.
 -   להימנע מהפעלת Macros; לא להריץ תוכן מתוך קבצים.
--   למנוע Formula Injection כאשר נתונים מיוצאים בעתיד לקובצי CSV.
--   לא לשמור קובץ מקור לצמיתות ב-MVP אלא אם תתווסף דרישה מפורשת.
+-   למנוע Formula Injection בקובץ הדוגמה ובכל ייצוא עתידי לקובצי CSV.
+-   לא לשמור קובץ מקור.
 
 ### 6.4 הגנה על AI
 
 -   OpenAI API Key נשמר כ-Environment Variable בשרת בלבד.
--   יש להגדיר Rate Limit לפי משתמש ולפי IP, מגבלת Tokens ובקרת עלויות.
+-   מגבלה של 20 שאלות ביום לכל משתמש (`advisor_usage`), מגבלת אורך
+    לשאלה (1,000 תווים) ולהקשר השיחה (10 הודעות אחרונות), ומגבלת Tokens
+    לתשובה.
+-   בנוסף, תקרת הוצאה חודשית (Usage limit) מוגדרת בחשבון OpenAI עצמו על
+    ידי בעל המוצר.
 -   אין לשלוח למודל פרטי Google OAuth, Tokens, סיסמאות או מידע אישי
-    שאינו נדרש לניתוח.
+    שאינו נדרש לניתוח (שם ואימייל המשתמש אינם נשלחים).
 -   יש להתייחס לתוכן שהמשתמש הזין ולקובצי הייבוא כנתונים, לא כהוראות
     מערכת למודל.
 -   המודל לא מקבל כלים שמאפשרים כתיבה למסד הנתונים או שינוי תקציב.
@@ -707,12 +696,15 @@ Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 ### 6.5 פרטיות ושמירת נתונים
 
 -   כל משתמש רואה רק את נתוניו.
--   יש להגדיר מדיניות פרטיות ותנאי שימוש לפני השקה.
--   יש להגדיר תהליך למחיקת חשבון ונתונים בהתאם למדיניות המוצר והדין החל.
+-   דפי תנאי שימוש ומדיניות פרטיות קיימים באפליקציה (`/terms`,
+    `/privacy`); הנוסח המשפטי מסופק על ידי בעל המוצר לפני השקה.
+-   **מחיקת חשבון:** `DELETE /api/account` מאמת את ה-Session, מוחק את
+    המשתמש מ-`auth.users` באמצעות Service Role Key בצד השרת, וכל נתוני
+    העסק נמחקים ב-Cascade. לאחר מכן ה-Session מתבטל.
 -   יש להימנע מלוגים המכילים תוכן פיננסי מפורט או פרטי משתמש שאינם
     נחוצים.
--   יש להגדיר Retention לשיחות Advisor ולייבואים בהתאם להחלטת המוצר;
-    ברירת המחדל היא לא לשמור קובצי מקור.
+-   שיחות Advisor וקובצי ייבוא אינם נשמרים. `import_jobs` שומר רק סיכום
+    מספרי ושמות קבצים.
 
 ------------------------------------------------------------------------
 
@@ -720,33 +712,37 @@ Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 
 ### 7.1 סביבות נפרדות
 
-יש להקים שני פרויקטים נפרדים ב-Supabase:
-
-  -----------------------------------------------------------------------
-  סביבה             Supabase Project  שימוש             חיבור מקומי
-  ----------------- ----------------- ----------------- -----------------
-  Development       `budgi-dev`       פיתוח, בדיקות,    סביבת הפיתוח
-                                      נתוני דמה         המקומית בלבד
-                                      וניסויים          
-
-  Production        `budgi-prod`      האתר החי ונתוני   אין חיבור ישיר
-                                      משתמשים אמיתיים   מהמחשב המקומי
-  -----------------------------------------------------------------------
+| סביבה | Supabase Project | שימוש | מתי מוקמת |
+|---|---|---|---|
+| Development | `budgi-dev` | פיתוח, בדיקות, נתוני דמה, משתמשי בדיקה; משמש את המחשב המקומי ואת גרסאות ה-Preview ב-Vercel | אבן דרך 1 |
+| Production | `budgi-prod` | האתר החי ונתוני משתמשים אמיתיים; אין חיבור מהמחשב המקומי | אבן הדרך האחרונה (הקשחה ופריסה) |
 
 הפרדה זו מונעת מצב שבו בדיקות או ניסויים פוגעים בנתוני משתמשים אמיתיים.
+עד אבן הדרך האחרונה אין סביבת Production כלל, ולכן אין סיכון לפרוס אליה
+בטעות.
 
 ### 7.2 Environment Variables
 
 #### מקומי --- Development בלבד
 
-קובץ `.env.local` במחשב המפתח:
+קובץ `.env` במחשב המפתח (מוחרג מ-Git; `.env.example` מכיל את השמות
+בלבד):
 
 ``` env
 NEXT_PUBLIC_SUPABASE_URL=https://<DEV_PROJECT_REF>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<DEV_PUBLISHABLE_KEY>
 OPENAI_API_KEY=<DEVELOPMENT_OPENAI_KEY>
 APP_ENV=development
+E2E_USER_A_EMAIL=
+E2E_USER_A_PASSWORD=
+E2E_USER_B_EMAIL=
+E2E_USER_B_PASSWORD=
 ```
+
+-   `OPENAI_API_KEY` נוסף רק באבן הדרך של ה-AI Advisor.
+-   `SUPABASE_SERVICE_ROLE_KEY` נדרש רק למחיקת חשבון, ונוסף באבן הדרך
+    האחרונה.
+-   משתני `E2E_*` הם פרטי משתמשי הבדיקה בפרויקט `budgi-dev` בלבד.
 
 #### Vercel --- Preview
 
@@ -756,46 +752,54 @@ APP_ENV=development
 
 #### Vercel --- Production
 
--   משתני Supabase של Production בלבד.
--   מפתח OpenAI של Production.
+-   מוגדר רק באבן הדרך האחרונה.
+-   משתני Supabase של Production בלבד, מפתח OpenAI של Production
+    ו-`SUPABASE_SERVICE_ROLE_KEY` של Production.
 -   כל Secrets נשמרים ב-Vercel Environment Variables ומוגדרים
     כ-Production בלבד.
 -   פרטי Production אינם נשמרים בקובצי המחשב המקומי או ב-GitHub.
 
-**חשוב:** - `NEXT_PUBLIC_*` מיועד רק לערכים שמותר לחשוף לדפדפן, כגון
-Supabase URL ו-Publishable/Anon Key המוגן באמצעות RLS. -
-`OPENAI_API_KEY` וכל Supabase Secret/Service Role Key הם Server-only
-ואסור להוסיף להם prefix של `NEXT_PUBLIC_`. - אין להעלות `.env.local`
-ל-Git. יש לכלול `.env.example` עם שמות משתנים וערכי placeholder בלבד. -
-יש להשתמש במפתחות נפרדים לכל סביבה.
+**חשוב:**
+
+-   `NEXT_PUBLIC_*` מיועד רק לערכים שמותר לחשוף לדפדפן, כגון Supabase URL
+    ו-Publishable/Anon Key המוגן באמצעות RLS.
+-   `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` ומשתני `E2E_*` הם
+    Server-only ואסור להוסיף להם prefix של `NEXT_PUBLIC_`.
+-   אין להעלות `.env` ל-Git. יש לכלול `.env.example` עם שמות משתנים
+    בלבד.
+-   יש להשתמש במפתחות נפרדים לכל סביבה.
 
 ### 7.3 GitHub Repository ו-Branches
 
 -   כל קוד המקור ינוהל ב-GitHub Repository פרטי.
--   `main` הוא Production branch.
--   עבודה חדשה תתבצע ב-feature branch.
--   שינוי ייכנס ל-`main` באמצעות Pull Request לאחר בדיקות.
--   Vercel יחובר ל-GitHub:
-    -   Push ל-branch שאינו `main` ייצור Preview Deployment המחובר
-        ל-Supabase Development.
-    -   Merge ל-`main` ייצור Production Deployment המחובר ל-Supabase
-        Production.
--   יש להגדיר ב-Vercel משתני Environment נפרדים ל-Preview ול-Production.
--   אין לבצע Deployment ידני בכל שינוי; Vercel יפעיל Build ו-Deployment
-    אוטומטיים בעקבות Git events.
+-   **`main`** הוא ענף העבודה. כל דחיפה אליו יוצרת ב-Vercel גרסת
+    **Preview** שמחוברת ל-`budgi-dev`.
+-   **`production`** הוא ענף ה-Production. ב-Vercel מוגדר ש-Production
+    Branch הוא `production` (ולא `main`). הענף נוצר רק באבן הדרך האחרונה.
+-   קידום גרסה ל-Production נעשה רק בעדכון ענף `production` לגרסה של
+    `main`, לאחר שה-Migrations הורצו על `budgi-prod` ובאישור מפורש של
+    המשתמש.
+-   אין לבצע Deployment ידני; Vercel מפעיל Build ו-Deployment אוטומטיים
+    בעקבות Git events.
 
 ### 7.4 Build ו-Deployment
 
-1.  מפתח דוחף שינוי ל-GitHub.
-2.  Vercel מפעיל Install, Build ובדיקות Build.
-3.  אם מדובר ב-Pull Request, נוצר Preview URL.
-4.  המפתח/המשתמש בודק את הגרסה מול Development.
-5.  לאחר אישור, ה-Pull Request מתמזג ל-`main`.
-6.  שינויי Database עוברים קודם ל-Production לפי נוהל Migration בסעיף
-    הבא.
-7.  לאחר שה-Database Production מעודכן, ה-Production Deployment
-    נוצר/מקודם ב-Vercel.
-8.  מבצעים Smoke Test לכניסה, Dashboard, שמירת נתונים ו-AI.
+**עד אבן הדרך האחרונה:**
+
+1.  בסיום כל אבן דרך והאישור שלה, הקוד נדחף ל-`main`.
+2.  Vercel מפעיל Install ו-Build ויוצר Preview URL המחובר ל-`budgi-dev`.
+3.  המשתמש יכול לבדוק את הגרסה בכתובת ה-Preview.
+
+**מאבן הדרך האחרונה ואילך (קידום ל-Production):**
+
+1.  הקוד ב-`main` נבדק ב-Preview.
+2.  Migrations חדשות מורצות על `budgi-prod` לפי הנוהל בסעיף 7.5.
+3.  רק לאחר הצלחתן, ענף `production` מתעדכן לגרסה של `main`.
+4.  Vercel יוצר Production Deployment.
+5.  מבצעים Smoke Test לכניסה, Dashboard, שמירת נתונים ו-AI.
+
+כך קוד חדש לעולם אינו מגיע ל-Production לפני שהסכמה שהוא תלוי בה קיימת
+שם.
 
 ### 7.5 Database Migrations --- נוהל מחייב
 
@@ -803,24 +807,29 @@ Supabase URL ו-Publishable/Anon Key המוגן באמצעות RLS. -
 `supabase/migrations/`. אין לבצע שינוי סכימה ידני ב-Production ללא
 Migration תואם ב-Repository.
 
-**תהליך שינוי רגיל:** 1. יוצרים Migration חדש ב-branch הפיתוח. 2. מחברים
-את Supabase CLI לפרויקט `budgi-dev`. 3. מריצים את ה-Migration על
-Development. 4. בודקים שהאפליקציה פועלת, שהנתונים נשמרים ושה-RLS
-והאילוצים תקינים. 5. מריצים בדיקות DB/RLS. 6. פותחים Pull Request
-ומציגים את השינוי לאישור. 7. לאחר אישור המשתמש למעבר Production, ממזגים
-ל-`main`. 8. **האדם האחראי על הפריסה (מפתח/מפעיל הפרויקט) מריץ את
-ה-Migration על `budgi-prod` לפני פריסת גרסת האפליקציה התלויה בו.** אין
-להסתמך על Deployment אוטומטי של Vercel שירוץ לפני עדכון הסכימה. 9. לאחר
-הצלחת Migration ובדיקת תקינות, מאפשרים ל-Vercel להשלים את Production
-Deployment. 10. מבצעים Smoke Test. במקרה כשל, עוצרים את קידום הגרסה
-ומפעילים נוהל Rollback/תיקון.
+**תהליך שינוי רגיל:**
 
-**כלל סדר פריסה:** - שינוי Additive ותואם לאחור: ניתן להוסיף עמודה/טבלה,
-לפרוס קוד שתומך במבנה החדש, ורק בהמשך להסיר מבנה ישן ב-Migration נפרד. -
-שינוי Breaking: יש לתכנן מעבר מדורג. לא לפרוס קוד שמצפה לעמודה/טבלה
-שעדיין לא קיימת. - אין להריץ Migration אוטומטית כחלק מ-Build של כל
-Preview. - Production Migration דורשת אישור מפורש של המשתמש/בעל המוצר
-לפני ההרצה.
+1.  יוצרים Migration חדש.
+2.  מחברים את Supabase CLI לפרויקט `budgi-dev`.
+3.  מריצים את ה-Migration על Development.
+4.  בודקים שהאפליקציה פועלת, שהנתונים נשמרים ושה-RLS והאילוצים תקינים.
+5.  מריצים בדיקות DB/RLS.
+6.  הקוד נדחף ל-`main` (Preview בלבד).
+7.  כשמקדמים ל-Production (מאבן הדרך האחרונה ואילך): לאחר אישור מפורש
+    של המשתמש, מריצים את ה-Migrations שעדיין לא הורצו על `budgi-prod`.
+8.  לאחר הצלחת ה-Migration ובדיקת תקינות, מעדכנים את ענף `production`.
+9.  מבצעים Smoke Test. במקרה כשל, לא מקדמים את הגרסה ומפעילים נוהל
+    תיקון.
+
+**כלל סדר פריסה:**
+
+-   שינוי Additive ותואם לאחור: ניתן להוסיף עמודה/טבלה, לפרוס קוד שתומך
+    במבנה החדש, ורק בהמשך להסיר מבנה ישן ב-Migration נפרד.
+-   שינוי Breaking: יש לתכנן מעבר מדורג. לא לפרוס קוד שמצפה לעמודה/טבלה
+    שעדיין לא קיימת.
+-   אין להריץ Migration אוטומטית כחלק מ-Build.
+-   Production Migration דורשת אישור מפורש של המשתמש/בעל המוצר לפני
+    ההרצה.
 
 דוגמת פקודות CLI (ההרצה תיעשה על ידי המפתח או גורם טכני, לא נדרשת התקנה
 במחשב המשתמש):
@@ -841,30 +850,35 @@ supabase db push
 
 SQL Migrations מעבירות סכמת DB, Policies, Functions, Triggers, Indexes
 ונתוני Seed מבוקרים. הן אינן מחליפות את הגדרות השירות והסודות הבאות; יש
-להגדיר ולבדוק אותן בנפרד בשני פרויקטי Supabase: - Google OAuth Provider:
-Client ID, Client Secret, Redirect URLs והגדרות Consent Screen. - Site
-URL ו-Redirect URL allowlist של Supabase Auth. - הגדרות Email/Auth
-נוספות, אם יופעלו בעתיד. - Storage Buckets ו-Policies, אם יתווסף אחסון
-קבצים בהמשך. - API Keys ו-Secrets. - הגדרות Webhooks / Edge Functions
-Secrets, אם יתווספו בעתיד. - הגדרות Billing, Compute, Backups
-ו-Region. - הגדרות Logging ו-Retention.
+להגדיר ולבדוק אותן בנפרד בכל פרויקט Supabase:
 
-ב-MVP אין צורך ב-Supabase Storage אם קובצי הייבוא מעובדים זמנית ואינם
-נשמרים. אם בעתיד תתווסף שמירת קבצים, יש להקים Bucket נפרד בכל סביבה
-ולהגדיר Policies מתאימות.
+-   Google OAuth Provider: Client ID, Client Secret, Redirect URLs
+    והגדרות Consent Screen.
+-   Site URL ו-Redirect URL allowlist של Supabase Auth.
+-   ספק Email/Password: מופעל ב-`budgi-dev` בלבד (למשתמשי הבדיקה), כבוי
+    ב-`budgi-prod`.
+-   API Keys ו-Secrets.
+-   הגדרות Billing, Compute, Backups ו-Region.
+-   הגדרות Logging ו-Retention.
+
+ב-MVP אין צורך ב-Supabase Storage, משום שקובצי הייבוא מעובדים זמנית
+ואינם נשמרים.
 
 ### 7.7 Supabase Free --- מגבלות שחשוב להכיר
 
-לפי תיעוד Supabase שנבדק: - תוכנית Free מאפשרת עד שני פרויקטים פעילים.
-שני הפרויקטים הנדרשים כאן יכולים להתאים למכסה זו, כל עוד לא נוצרים
-פרויקטים נוספים בחשבונות/Organizations שבהם המשתמש Owner או Admin. -
-פרויקט Free בעל פעילות נמוכה במשך כשבוע עלול להיעצר אוטומטית. הנתונים
-נשמרים, אך השירות אינו זמין עד שחוזרים ומחדשים את הפרויקט. - תוכניות
-בתשלום אינן עוצרות פרויקטים בגלל חוסר פעילות. - חיוב Supabase מתבצע ברמת
-Organization; כל Organization משתמשת בתוכנית אחת. בפרויקט נוסף בתוכנית
-Pro עשויה להיות עלות Compute נוספת. - לכן Free מתאים להתחלה ולבדיקות, אך
-ל-Production של מוצר אמיתי מומלץ לתקצב תוכנית בתשלום. אם Development
-נשאר ב-Free, יש להביא בחשבון השהיה אפשרית.
+לפי תיעוד Supabase שנבדק:
+
+-   תוכנית Free מאפשרת עד שני פרויקטים פעילים. שני הפרויקטים הנדרשים כאן
+    יכולים להתאים למכסה זו, כל עוד לא נוצרים פרויקטים נוספים
+    בחשבונות/Organizations שבהם המשתמש Owner או Admin.
+-   פרויקט Free בעל פעילות נמוכה במשך כשבוע עלול להיעצר אוטומטית. הנתונים
+    נשמרים, אך השירות אינו זמין עד שחוזרים ומחדשים את הפרויקט.
+-   תוכניות בתשלום אינן עוצרות פרויקטים בגלל חוסר פעילות.
+-   חיוב Supabase מתבצע ברמת Organization; כל Organization משתמשת בתוכנית
+    אחת. בפרויקט נוסף בתוכנית Pro עשויה להיות עלות Compute נוספת.
+-   לכן Free מתאים להתחלה ולבדיקות, אך ל-Production של מוצר אמיתי מומלץ
+    לתקצב תוכנית בתשלום. אם Development נשאר ב-Free, יש להביא בחשבון
+    השהיה אפשרית.
 
 מקורות: [Free Project
 Pausing](https://supabase.com/docs/guides/platform/free-project-pausing),
@@ -878,17 +892,30 @@ Supabase](https://supabase.com/docs/guides/platform/billing-on-supabase),
 
 ### 8.1 בדיקות
 
--   **Unit Tests (Vitest):** נוסחאות CPL, CAC, Cost per Deal, ROAS, קצב
-    תקציב ותחזיות.
--   **Validation Tests:** נתונים חסרים, אפס במכנה, סכומים שליליים, טווחי
-    תאריכים ונתוני ייבוא לא תקינים.
--   **RLS Tests:** משתמש אינו יכול לגשת לנתוני משתמש אחר.
--   **Integration Tests:** יצירה ועדכון קמפיין, ייבוא קובץ, יצירת התראה
-    ושמירת יעדים.
--   **End-to-End (Playwright):** Google login בסביבת בדיקות, הגדרת
-    תקציב, יצירת קמפיין, הצגת Dashboard וזרימת Advisor.
+-   **Unit Tests (Vitest):** נוסחאות CPL, CAC, Cost per Deal, ROAS,
+    Conversion Rate, חלוקת שבוע לחודשים, קצב תקציב, תחזית (כולל סף 7
+    הימים ושילוב ההיסטוריה) ותנאי ההתראות.
+-   **Validation Tests:** נתונים חסרים, אפס במכנה, ערכים שליליים, ערכים
+    לא שלמים, נרמול תאריך ליום ראשון ונתוני ייבוא לא תקינים.
+-   **RLS Tests (Vitest מול `budgi-dev`):** הבדיקות מתחברות כמשתמש בדיקה
+    A וכמשתמש בדיקה B באמצעות Supabase client, ומוודאות שמשתמש אחד אינו
+    יכול לקרוא, לשנות או למחוק נתונים של השני. אין צורך ב-Docker או במסד
+    נתונים מקומי.
+-   **Integration Tests:** יצירה ועדכון קמפיין, שורות שבוע, ייבוא קובץ,
+    יצירת התראה ומניעת כפילויות, שמירת יעדים והעתקה לחודש חדש.
+-   **End-to-End (Playwright מול סביבה מקומית שמחוברת ל-`budgi-dev`):**
+    לפני הבדיקות, סקריפט הכנה מתחבר כמשתמש בדיקה דרך Email/Password של
+    Supabase ושומר את ה-Session לשימוש הבדיקות. כך הבדיקות עוקפות את מסך
+    Google. התרחישים: הגדרה ראשונית, יצירת קמפיין, הזנת שבוע, ייבוא,
+    Dashboard, התראות וזרימת Advisor.
+-   **התחברות Google עצמה** נבדקת ידנית בכל אבן דרך שנוגעת בה, כי לא ניתן
+    לבצע אותה באופן אוטומטי.
 -   **AI Contract Tests:** תשובות תקינות לפי JSON Schema; טיפול
-    ב-refusal, timeout, תשובה חלקית או פלט שאינו עובר validation.
+    ב-refusal, timeout, תשובה חלקית או פלט שאינו עובר validation. בבדיקות
+    האוטומטיות הקריאה ל-OpenAI מוחלפת בתשובה קבועה (Mock), כדי שלא תהיה
+    עלות.
+-   **נגישות:** בדיקה אוטומטית באמצעות axe (דרך Playwright) ובדיקה ידנית
+    של ניווט מקלדת באבן הדרך האחרונה.
 
 ### 8.2 ניטור וטיפול בתקלות
 
@@ -948,3 +975,42 @@ Ads, Google Ads, TikTok Ads או LinkedIn Ads. - מודלי ML עצמאיים
 > המחירים, מכסות השימוש ומגבלות התוכניות עשויים להשתנות. לפני רכישת
 > תוכנית או הפעלת Production יש לבדוק שוב את דפי התמחור וההגבלות
 > הרשמיים.
+
+------------------------------------------------------------------------
+
+## החלטות מרכזיות (ADRs)
+
+### ADR-1: נתוני ביצועים שבועיים
+
+**הקשר:** תקופות חופשיות בנתוני הביצועים יצרו סיכון לחפיפות ולספירה כפולה,
+והקשו על חישוב קצב ותחזית.
+
+**החלטה:** שורה אחת לכל קמפיין לכל שבוע (ראשון--שבת), מזוהה
+ב-`week_start`. תקציבים ויעדים חודשיים. שבוע שחוצה חודשים מתחלק לפי ימים.
+
+**השלכות:** אין חפיפות (Unique על `(campaign_id, week_start)`). הגרפים
+מציגים נקודה לכל שבוע. סיכומים חודשיים כוללים חלוקה יחסית, ומספרים שלמים
+מעוגלים בתצוגה.
+
+### ADR-2: Production רק באבן הדרך האחרונה, דרך ענף `production`
+
+**הקשר:** חיבור `main` ל-Production היה גורם לכל דחיפה של אבן דרך לפרוס
+לאתר החי לפני הרצת Migrations.
+
+**החלטה:** `main` יוצר רק Preview המחובר ל-`budgi-dev`. `budgi-prod`
+ומשתני Production ב-Vercel מוקמים באבן הדרך האחרונה. Production Branch
+ב-Vercel הוא `production`, ומקודם רק אחרי הרצת Migrations על `budgi-prod`.
+
+**השלכות:** תהליך הדחיפה הרגיל אינו יכול לפרוס ל-Production. קידום
+ל-Production הוא פעולה נפרדת ומפורשת.
+
+### ADR-3: משתמשי בדיקה ב-Development בלבד
+
+**הקשר:** לא ניתן להתחבר עם Google באופן אוטומטי בבדיקות, ובדיקות DB
+מקומיות דורשות Docker.
+
+**החלטה:** ספק Email/Password מופעל רק ב-`budgi-dev`, עם שני משתמשי
+בדיקה. Playwright ובדיקות ה-RLS מתחברים דרכם בקוד. בדיקות RLS רצות
+ב-Vitest מול `budgi-dev`.
+
+**השלכות:** התחברות Google נבדקת ידנית. ב-`budgi-prod` הספק כבוי.

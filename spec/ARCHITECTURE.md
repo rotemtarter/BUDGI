@@ -1029,3 +1029,17 @@ Deployment (Vercel CLI: `link` ואז `git connect`, שהמשתמש מריץ ב�
 
 **השלכות:** אין צורך בקוד או בהגדרה מיוחדת ב-Repository כדי לחסום
 Production. עד Milestone 9 לא קיים אף Production Deployment.
+
+### ADR-5: ענף `production` נוצר כבר ב-Milestone 1
+
+**הקשר:** Vercel לא מאפשר לשמור Production Branch שאינו קיים ב-Repository,
+ולכן אי אפשר היה להגדיר את `production` כ-Production Branch כל עוד הענף
+לא קיים (בניגוד לכוונה המקורית ב-7.3 ליצור אותו רק באבן הדרך האחרונה).
+
+**החלטה:** הענף `production` נוצר ב-Milestone 1 מאותו commit של `main`,
+ונשאר ללא שימוש. אין דוחפים אליו עד Milestone 9. שם, לאחר הרצת
+ה-Migrations על `budgi-prod` ובאישור מפורש, מעדכנים אותו לגרסה של `main`.
+
+**השלכות:** עקרון ADR-2 נשמר: דחיפה ל-`main` יוצרת Preview בלבד.
+יצירת הענף לא יצרה Deployment (נבדק). עד Milestone 9 אין משתני Production
+ב-Vercel, ולכן גם דחיפה בטעות ל-`production` לא תתחבר ל-`budgi-dev`.

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { showAlertToasts } from "@/features/alerts/show-alert-toasts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -121,6 +122,7 @@ function WeekForm({
       const result = await saveWeekAction(campaignId, getValues());
       if (result.ok) {
         toast.success("נתוני השבוע נשמרו");
+        showAlertToasts(result.alerts);
         onDone();
       } else {
         toast.error(result.message);

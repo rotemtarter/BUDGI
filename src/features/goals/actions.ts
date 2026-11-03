@@ -1,9 +1,11 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { addMonths, currentMonth } from "@/lib/dates/month";
 import { goalsSchema, type GoalsInput } from "@/lib/validation/goals";
 import { requireOnboardedUser } from "@/server/auth/session";
 import { saveGoalsForMonth } from "@/server/repositories/goals";
+import { checkAlerts } from "@/server/services/alerts-check";
 import { SAVE_FAILED_MESSAGE, type FormResult } from "@/features/form-result";
 
 export async function saveGoalsAction(input: GoalsInput): Promise<FormResult> {
@@ -25,5 +27,8 @@ export async function saveGoalsAction(input: GoalsInput): Promise<FormResult> {
     console.error("saveGoals failed", { code: (error as { code?: string }).code });
     return { ok: false, message: SAVE_FAILED_MESSAGE };
   }
-  return { ok: true };
+  const alerts = await checkAlerts(user.id);
+  // Updates the unread counter on the bell
+  refresh();
+  return { ok: true, alerts };
 }

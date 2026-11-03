@@ -7,6 +7,7 @@ import { weekSchema, type WeekInput } from "@/lib/validation/weeks";
 import { requireOnboardedUser } from "@/server/auth/session";
 import { getCampaign } from "@/server/repositories/campaigns";
 import { deleteWeek, upsertWeek } from "@/server/repositories/performance";
+import { checkAlerts } from "@/server/services/alerts-check";
 import { SAVE_FAILED_MESSAGE, type FormResult } from "@/features/form-result";
 
 const idSchema = z.uuid();
@@ -34,13 +35,14 @@ export async function saveWeekAction(campaignId: string, input: WeekInput): Prom
     console.error("saveWeek failed", { code: errorCode(error) });
     return { ok: false, message: SAVE_FAILED_MESSAGE };
   }
+  const alerts = await checkAlerts(user.id);
   // The client gets the updated screen with the action result
   refresh();
-  return { ok: true };
+  return { ok: true, alerts };
 }
 
 export async function deleteWeekAction(campaignId: string, weekStart: string): Promise<FormResult> {
-  await requireOnboardedUser();
+  const user = await requireOnboardedUser();
   if (!idSchema.safeParse(campaignId).success || !isWeekStart(weekStart)) {
     return { ok: false, message: "השבוע לא נמצא" };
   }
@@ -51,7 +53,8 @@ export async function deleteWeekAction(campaignId: string, weekStart: string): P
     console.error("deleteWeek failed", { code: errorCode(error) });
     return { ok: false, message: "המחיקה נכשלה. נסה שוב." };
   }
+  const alerts = await checkAlerts(user.id);
   // The client gets the updated screen with the action result
   refresh();
-  return { ok: true };
+  return { ok: true, alerts };
 }

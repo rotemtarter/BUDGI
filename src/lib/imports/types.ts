@@ -1,4 +1,5 @@
 import type { Platform } from "@/lib/campaigns/platforms";
+import type { NewAlert } from "@/lib/alerts/types";
 import type { ColumnMapping } from "./fields";
 import type { AdjustedDate, RowError } from "./rows";
 import type { WeekValues } from "./campaign";
@@ -47,4 +48,6 @@ export type CommitResult = {
   campaignsCreated: number;
 };
 
-export type CommitResponse = { ok: true; result: CommitResult } | { ok: false; message: string };
+export type CommitResponse =
+  | { ok: true; result: CommitResult; alerts: NewAlert[] }
+  | { ok: false; message: string };

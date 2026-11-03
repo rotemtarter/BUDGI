@@ -15,6 +15,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_settings: {
+        Row: {
+          alert_type: string
+          enabled: boolean
+          id: string
+          threshold_config: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          enabled?: boolean
+          id?: string
+          threshold_config?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          alert_type?: string
+          enabled?: boolean
+          id?: string
+          threshold_config?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          dedupe_key: string
+          description: string
+          deviation: number
+          id: string
+          month: string
+          read_at: string | null
+          related_campaign_id: string | null
+          severity: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          dedupe_key: string
+          description: string
+          deviation?: number
+          id?: string
+          month: string
+          read_at?: string | null
+          related_campaign_id?: string | null
+          severity: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          dedupe_key?: string
+          description?: string
+          deviation?: number
+          id?: string
+          month?: string
+          read_at?: string | null
+          related_campaign_id?: string | null
+          severity?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_related_campaign_id_fkey"
+            columns: ["related_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           created_at: string

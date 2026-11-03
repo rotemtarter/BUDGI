@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { showAlertToasts } from "@/features/alerts/show-alert-toasts";
 import { Stepper } from "@/components/common/stepper";
 import { MAX_FILE_BYTES, emptyMapping, type ColumnMapping } from "@/lib/imports/fields";
 import { FILE_MESSAGES } from "@/lib/imports/messages";
@@ -120,6 +121,7 @@ export function ImportWizard({ campaign }: { campaign?: ImportCampaign }) {
     if (!response.ok) return void toast.error(response.message);
     setResult(response.result);
     setStep(3);
+    showAlertToasts(response.alerts);
     // Campaign screens show the imported data
     router.refresh();
   }

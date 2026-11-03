@@ -11,11 +11,12 @@ import { getFirstGoalMonth, getGoalsForMonth } from "@/server/repositories/goals
 import { GoalsForm } from "@/features/goals/goals-form";
 import { signOutAction } from "@/features/auth/actions";
 import { BusinessNameForm } from "@/features/profile/business-name-form";
+import { AlertSettingsForm } from "@/features/alerts/alert-settings-form";
+import { getAlertSettings } from "@/server/repositories/alerts";
 
 export const metadata: Metadata = { title: "הגדרות · Budgi" };
 
-// DESIGN.md 1.10, areas 1, 2, 4 and 5. Alert thresholds (M7) and account
-// deletion (M9) are added later.
+// DESIGN.md 1.10, areas 1–5. Account deletion (M9) is added later.
 export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
   return (
     <>
@@ -26,6 +27,9 @@ export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
         </Suspense>
         <Suspense fallback={<CardSkeleton tall />}>
           <GoalsCard searchParams={searchParams} />
+        </Suspense>
+        <Suspense fallback={<CardSkeleton tall />}>
+          <AlertsCard />
         </Suspense>
         <Card>
           <CardHeader>
@@ -110,6 +114,21 @@ async function GoalsCard({ searchParams }: Pick<PageProps<"/settings">, "searchP
       </CardHeader>
       <CardContent>
         <GoalsForm key={month} month={month} monthOptions={options} goals={goals} />
+      </CardContent>
+    </Card>
+  );
+}
+
+async function AlertsCard() {
+  await requireOnboardedUser();
+  const settings = await getAlertSettings();
+  return (
+    <Card id="alerts" className="scroll-mt-24">
+      <CardHeader>
+        <CardTitle>התראות</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AlertSettingsForm settings={settings} />
       </CardContent>
     </Card>
   );

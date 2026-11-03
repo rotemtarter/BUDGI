@@ -289,3 +289,97 @@ describe("RLS: import_jobs and commit_import", () => {
     expect((await anon.from("import_jobs").select("id")).data ?? []).toHaveLength(0);
   });
 });
+
+describe("RLS: alerts and alert_settings", () => {
+  let aAlertId: string;
+  let aSettingId: string;
+
+  beforeAll(async () => {
+    const alert = await a.client
+      .from("alerts")
+      .insert({
+        alert_type: "budget_overrun",
+        severity: "critical",
+        title: "חריגה מהתקציב",
+        description: "בדיקה",
+        related_campaign_id: aCampaignId,
+        month: MONTH,
+        dedupe_key: `budget_overrun:${aCampaignId}:${MONTH}`,
+        deviation: 10,
+      })
+      .select("id")
+      .single();
+    if (alert.error) throw alert.error;
+    aAlertId = alert.data.id;
+
+    const setting = await a.client
+      .from("alert_settings")
+      .insert({ alert_type: "spend_pace", threshold_config: { percent: 20 }, enabled: false })
+      .select("id")
+      .single();
+    if (setting.error) throw setting.error;
+    aSettingId = setting.data.id;
+  });
+
+  it("B cannot read A's alerts or settings", async () => {
+    expect((await b.client.from("alerts").select("id").eq("id", aAlertId)).data).toEqual([]);
+    expect((await b.client.from("alert_settings").select("id").eq("id", aSettingId)).data).toEqual([]);
+  });
+
+  it("B cannot mark A's alert as read, change A's settings or delete them", async () => {
+    const read = await b.client.from("alerts").update({ read_at: new Date().toISOString() }).eq("id", aAlertId).select("id");
+    expect(read.data).toEqual([]);
+    const setting = await b.client.from("alert_settings").update({ enabled: true }).eq("id", aSettingId).select("id");
+    expect(setting.data).toEqual([]);
+    await b.client.from("alerts").delete().eq("id", aAlertId);
+    await b.client.from("alert_settings").delete().eq("id", aSettingId);
+
+    const alert = await a.client.from("alerts").select("read_at").eq("id", aAlertId).single();
+    expect(alert.data?.read_at).toBeNull();
+    const own = await a.client.from("alert_settings").select("enabled").eq("id", aSettingId).single();
+    expect(own.data?.enabled).toBe(false);
+  });
+
+  it("B cannot create alerts or settings for A, or point an alert at A's campaign", async () => {
+    const asA = await b.client.from("alerts").insert({
+      user_id: a.userId,
+      alert_type: "spend_pace",
+      severity: "warning",
+      title: "x",
+      description: "x",
+      month: MONTH,
+      dedupe_key: "x",
+    });
+    expect(asA.error?.code).toBe("42501");
+    const onACampaign = await b.client.from("alerts").insert({
+      alert_type: "spend_pace",
+      severity: "warning",
+      title: "x",
+      description: "x",
+      related_campaign_id: aCampaignId,
+      month: MONTH,
+      dedupe_key: "x",
+    });
+    expect(onACampaign.error?.code).toBe("42501");
+    const settingForA = await b.client.from("alert_settings").insert({ user_id: a.userId, alert_type: "goal_risk" });
+    expect(settingForA.error?.code).toBe("42501");
+  });
+
+  it("A can mark an alert as read but change nothing else in it", async () => {
+    const title = await a.client.from("alerts").update({ title: "שונה" }).eq("id", aAlertId);
+    expect(title.error?.code).toBe("42501");
+    const read = await a.client
+      .from("alerts")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", aAlertId)
+      .select("read_at")
+      .single();
+    expect(read.data?.read_at).not.toBeNull();
+  });
+
+  it("anonymous visitors cannot read alerts or settings", async () => {
+    const anon = anonClient();
+    expect((await anon.from("alerts").select("id")).data ?? []).toHaveLength(0);
+    expect((await anon.from("alert_settings").select("id")).data ?? []).toHaveLength(0);
+  });
+});

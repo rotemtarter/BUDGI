@@ -63,10 +63,10 @@ export async function ensureUserAOnboarded() {
   if (error) throw error;
 }
 
-// Removes test user A's campaigns and weekly data, keeping onboarding and goals
+// Removes test user A's alerts, campaigns and weekly data, keeping onboarding and goals
 export async function resetUserACampaigns() {
   const { client, userId } = await signInTestUser("A");
-  for (const table of ["campaign_performance", "campaign_budgets", "campaigns"] as const) {
+  for (const table of ["alerts", "alert_settings", "campaign_performance", "campaign_budgets", "campaigns"] as const) {
     const { error } = await client.from(table).delete().eq("user_id", userId);
     if (error) throw error;
   }

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { showAlertToasts } from "@/features/alerts/show-alert-toasts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, fieldA11y } from "@/components/forms/field";
@@ -54,6 +55,7 @@ export function BudgetCard({
       const result = await saveCampaignBudgetAction(campaignId, getValues());
       if (result.ok) {
         toast.success("התקציב נשמר");
+        showAlertToasts(result.alerts);
         setEditing(false);
       } else {
         toast.error(result.message);

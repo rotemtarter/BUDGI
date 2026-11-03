@@ -31,8 +31,8 @@ test("navigation works on desktop", async ({ page, isMobile }) => {
   }
 
   // Screens from later milestones show "coming soon"
-  await nav.getByRole("link", { name: "התראות", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "התראות" }).filter({ visible: true })).toBeVisible();
+  await nav.getByRole("link", { name: "AI Advisor", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "AI Budget Advisor" }).filter({ visible: true })).toBeVisible();
   // Previously visited pages stay in the DOM (hidden), so look at the visible one
   await expect(page.getByText("המסך הזה ייבנה בקרוב.").filter({ visible: true })).toBeVisible();
 });

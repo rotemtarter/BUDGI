@@ -22,6 +22,7 @@ import {
   saveCampaignBudget,
   updateCampaign,
 } from "@/server/repositories/campaigns";
+import { checkAlerts } from "@/server/services/alerts-check";
 import { SAVE_FAILED_MESSAGE, type FormResult } from "@/features/form-result";
 
 const INVALID_MESSAGE = "יש לתקן את השדות המסומנים";
@@ -108,7 +109,8 @@ export async function saveCampaignBudgetAction(id: string, input: CampaignBudget
     console.error("saveCampaignBudget failed", { code: errorCode(error) });
     return { ok: false, message: SAVE_FAILED_MESSAGE };
   }
+  const alerts = await checkAlerts(user.id);
   // The client gets the updated screen with the action result
   refresh();
-  return { ok: true };
+  return { ok: true, alerts };
 }

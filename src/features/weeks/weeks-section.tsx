@@ -3,6 +3,7 @@
 import { useState, useTransition, type ReactNode } from "react";
 import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { showAlertToasts } from "@/features/alerts/show-alert-toasts";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/empty-state";
@@ -41,6 +42,7 @@ export function WeeksSection({ campaignId, weeks }: { campaignId: string; weeks:
       const result = await deleteWeekAction(campaignId, toDelete);
       if (result.ok) {
         toast.success("השבוע נמחק");
+        showAlertToasts(result.alerts);
         setToDelete(null);
       } else {
         toast.error(result.message);

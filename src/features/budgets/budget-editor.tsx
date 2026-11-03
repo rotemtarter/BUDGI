@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { showAlertToasts } from "@/features/alerts/show-alert-toasts";
 import { Button } from "@/components/ui/button";
 import { Amount } from "@/components/common/amount";
 import { NumberInput } from "@/components/forms/number-input";
@@ -50,6 +51,7 @@ export function BudgetEditor({
       const result = await save({ budget: value });
       if (result.ok) {
         toast.success("התקציב נשמר");
+        showAlertToasts(result.alerts);
         setEditing(false);
       } else {
         toast.error(result.message);

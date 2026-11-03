@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { showAlertToasts } from "@/features/alerts/show-alert-toasts";
 import { Button } from "@/components/ui/button";
 import { Field, fieldA11y } from "@/components/forms/field";
 import { NumberInput } from "@/components/forms/number-input";
@@ -53,6 +54,7 @@ export function GoalsForm({
       const result = await saveGoalsAction(getValues());
       if (result.ok) {
         toast.success("היעדים נשמרו");
+        showAlertToasts(result.alerts);
         router.refresh();
       } else {
         toast.error(result.message);

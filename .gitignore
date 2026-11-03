@@ -80,3 +80,6 @@ desktop.ini
 tmp/
 temp/
 *.tmp
+
+# --- Playwright saved sessions ---
+tests/e2e/.auth/

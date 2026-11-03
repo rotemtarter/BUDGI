@@ -10,6 +10,7 @@ import { requireOnboardedUser } from "@/server/auth/session";
 import { getFirstGoalMonth, getGoalsForMonth } from "@/server/repositories/goals";
 import { GoalsForm } from "@/features/goals/goals-form";
 import { signOutAction } from "@/features/auth/actions";
+import { BusinessNameForm } from "@/features/profile/business-name-form";
 
 export const metadata: Metadata = { title: "הגדרות · Budgi" };
 
@@ -78,7 +79,10 @@ async function AccountCard() {
             </dd>
           </div>
         </dl>
-        <p className="mt-4 type-small text-muted-foreground">הפרטים מגיעים מחשבון Google שלך.</p>
+        <p className="mt-4 type-small text-muted-foreground">השם והאימייל מגיעים מחשבון Google שלך.</p>
+        <div className="mt-6 border-t border-brand-light-gray pt-6">
+          <BusinessNameForm businessName={user.businessName} />
+        </div>
       </CardContent>
     </Card>
   );

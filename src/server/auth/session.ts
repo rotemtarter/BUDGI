@@ -6,6 +6,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export type CurrentUser = {
   id: string;
   displayName: string | null;
+  // Shown in the header instead of the Google name, when set
+  businessName: string | null;
   email: string | null;
   onboarded: boolean;
 };
@@ -20,13 +22,14 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, email, onboarding_completed_at")
+    .select("display_name, business_name, email, onboarding_completed_at")
     .eq("id", userId)
     .maybeSingle();
 
   return {
     id: userId,
     displayName: profile?.display_name ?? null,
+    businessName: profile?.business_name ?? null,
     email: profile?.email ?? (data.claims.email as string | undefined) ?? null,
     onboarded: Boolean(profile?.onboarding_completed_at),
   };

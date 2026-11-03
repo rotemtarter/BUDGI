@@ -400,7 +400,7 @@ tests/
 
 | Entity / Table | שדות עיקריים | תפקיד וקשרים |
 |---|---|---|
-| `profiles` | `id` (UUID, FK ל-`auth.users`), `display_name`, `email`, `onboarding_completed_at`, `created_at` | פרופיל משתמש; `onboarding_completed_at` ריק עד סיום ההגדרה הראשונית |
+| `profiles` | `id` (UUID, FK ל-`auth.users`), `display_name`, `email`, `business_name`, `onboarding_completed_at`, `created_at` | פרופיל משתמש; `onboarding_completed_at` ריק עד סיום ההגדרה הראשונית. `business_name` אופציונלי (עד 100 תווים, בלי רווחים בקצוות) — מוצג בכותרת במקום השם מ-Google. השם והאימייל לקריאה בלבד; המשתמש יכול לעדכן רק את `business_name` (הרשאת עמודה) |
 | `budgets` | `id`, `user_id`, `month`, `planned_amount`, `created_at`, `updated_at` | תקציב שיווק כולל לחודש. Unique על `(user_id, month)` |
 | `campaigns` | `id`, `user_id`, `name`, `platform`, `status`, `description`, `created_at`, `updated_at` | קמפיין. `platform` ∈ `meta_ads`, `google_ads`, `tiktok_ads`, `linkedin_ads`. `status` ∈ `active`, `paused`, `ended`. Unique על `(user_id, lower(trim(name)), platform)` |
 | `campaign_budgets` | `id`, `user_id`, `campaign_id`, `month`, `planned_amount`, `updated_at` | תקציב מתוכנן לקמפיין לחודש. Unique על `(campaign_id, month)` |
@@ -1068,3 +1068,18 @@ Production. עד Milestone 9 לא קיים אף Production Deployment.
 - פעולות שמירה ב-Server Actions קוראות `refresh()` של Next.js, כך שהמסך המעודכן מגיע יחד עם תוצאת הפעולה.
 
 **השלכות:** „אין תקציב” ו„לא הוגדר” מובחנים. משתמש לא יכול לשייך נתונים לקמפיין של משתמש אחר גם אם ניחש מזהה. מסכי Milestone 5 ישתמשו באותן פונקציות חישוב.
+
+### ADR-8: ייבוא בלי שמירת קובץ, שמירה בפונקציית SQL אחת, ו-SheetJS מהמקור הרשמי
+
+**הקשר:** הייבוא (PRD 3.4, ARCHITECTURE 5.2) דורש תצוגה מקדימה לפני שמירה, שמירה בטרנזקציה אחת, ואי-שמירה של קובץ המקור. ה-Supabase client אינו תומך בטרנזקציות. חבילת `xlsx` שב-npm תקועה בגרסה 0.18.5 עם פרצות אבטחה ידועות. Server Actions מוגבלים כברירת מחדל ל-1MB, ו-Vercel מגביל גוף בקשה לפונקציה ל-4.5MB. קובצי CSV מ-Excel בעברית נשמרים לרוב ב-Windows-1255.
+
+**החלטה:**
+- שלושה Route Handlers: `/api/imports/preview`, `/api/imports/commit`, `/api/imports/template`. הדפדפן מחזיק את הקובץ ושולח אותו שוב בכל שלב; ה-commit מפענח ומאמת הכול מחדש בשרת ואינו סומך על שורות מהדפדפן. ההתאמה היא לפי מיקום עמודה.
+- השמירה היא פונקציית SQL `commit_import` (security invoker): יוצרת קמפיינים חסרים, מבצעת Upsert עם `coalesce` (שדה ריק לא דורס) ו-`source = 'import'`, ורושמת `import_jobs` — הכול או כלום. ייבוא שנכשל נרשם בנפרד בסטטוס `failed`.
+- SheetJS מותקן מהמקור הרשמי (`cdn.sheetjs.com`, גרסה 0.20.3), רק הגיליון הראשון, בלי נוסחאות. CSV נקרא עם `papaparse` כטקסט; קידוד UTF-8, ואם אינו תקין — Windows-1255.
+- `parseNumber` המשותף משמש גם את הטפסים וגם את הייבוא. בתאי מספר של Excel סכומים מעוגלים לאגורות; תא תאריך של Excel (מספר סידורי) מומר לתאריך.
+- שתי שורות לאותו קמפיין ושבוע באותו קובץ — כל השורות המעורבות נדחות.
+- ההתאמה הידנית (`ColumnMapping`) מאפשרת פלטפורמה אחת לכל הקובץ במקום עמודה, ותקופה (`period`: מתאריך–עד תאריך, עד 8 ימים) במקום עמודת שבוע. השבוע נקבע לפי רוב ימי התקופה (`periodWeek`).
+- ייבוא לקמפיין אחד עובר באותם Route Handlers עם שדה `campaign` (מזהה הקמפיין). השרת מוודא שהקמפיין שייך למשתמש, מסכם את כל שורות הקובץ לשבוע אחד (`sumRows`), ושומר דרך אותה `commit_import` עם שורה אחת — בלי שינוי במסד הנתונים. שורה שגויה חוסמת את השמירה, כדי שהסיכום לא יהיה חלקי.
+
+**השלכות:** אין צורך ב-Storage או במצב שמור בשרת בין השלבים. ב-Preview/Production קובץ בין 4.5MB ל-5MB נחסם על ידי Vercel (`413`) ומוצגת אותה הודעה „הקובץ גדול מדי”; קובץ תקין של 5,000 שורות שוקל בסביבות 0.5MB. עדכון SheetJS נעשה ידנית מאותו מקור. ב-M7 תתווסף הפעלת Alert Service אחרי `commit_import`. `import_jobs` אינה ניתנת למחיקה מהממשק (רק ב-Cascade עם המשתמש).

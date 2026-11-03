@@ -167,6 +167,18 @@ describe("RLS: profiles", () => {
     expect(result.data).toEqual([]);
   });
 
+  it("each user sets only their own business name, within the rules", async () => {
+    expect((await a.client.from("profiles").update({ business_name: "העסק של A" }).eq("id", a.userId)).error).toBeNull();
+    await b.client.from("profiles").update({ business_name: "not mine" }).eq("id", a.userId);
+    const mine = await a.client.from("profiles").select("business_name").eq("id", a.userId).single();
+    expect(mine.data?.business_name).toBe("העסק של A");
+
+    // Trimmed and up to 100 characters (the app trims before saving)
+    expect((await a.client.from("profiles").update({ business_name: " x " }).eq("id", a.userId)).error?.code).toBe("23514");
+    expect((await a.client.from("profiles").update({ business_name: "x".repeat(101) }).eq("id", a.userId)).error?.code).toBe("23514");
+    expect((await a.client.from("profiles").update({ business_name: null }).eq("id", a.userId)).error).toBeNull();
+  });
+
   it("name and email are read-only", async () => {
     const result = await a.client.from("profiles").update({ display_name: "x" }).eq("id", a.userId);
     expect(result.error?.code).toBe("42501");
@@ -232,5 +244,48 @@ describe("RLS: campaigns, campaign budgets and weekly rows", () => {
       .from("campaigns")
       .insert({ user_id: a.userId, name: "Not mine", platform: "meta_ads" });
     expect(result.error?.code).toBe("42501");
+  });
+});
+
+describe("RLS: import_jobs and commit_import", () => {
+  it("B cannot read A's import jobs or add one for A", async () => {
+    const job = await a.client
+      .from("import_jobs")
+      .insert({ file_name: "a.csv", status: "failed" })
+      .select("id")
+      .single();
+    expect(job.error).toBeNull();
+
+    expect((await b.client.from("import_jobs").select("id").eq("id", job.data!.id)).data).toHaveLength(0);
+    const asA = await b.client.from("import_jobs").insert({ user_id: a.userId, file_name: "x.csv", status: "failed" });
+    expect(asA.error?.code).toBe("42501");
+  });
+
+  it("an import by B only touches B's own campaigns", async () => {
+    const { error } = await b.client.rpc("commit_import", {
+      p_file_name: "b.csv",
+      p_rows: [{ name: "A campaign", platform: "google_ads", week_start: "2031-01-05", spend: 999 }],
+      p_rows_total: 1,
+      p_rows_rejected: 0,
+      p_errors: [],
+    });
+    expect(error).toBeNull();
+    // A's week with the same campaign name and week is unchanged
+    const week = await a.client.from("campaign_performance").select("spend").eq("id", aWeekId).single();
+    expect(week.data?.spend).toBe(100);
+    await resetTestUser(b.client, b.userId);
+  });
+
+  it("anonymous visitors cannot import or read import jobs", async () => {
+    const anon = anonClient();
+    const result = await anon.rpc("commit_import", {
+      p_file_name: "x.csv",
+      p_rows: [{ name: "X", platform: "meta_ads", week_start: "2031-01-05", spend: 1 }],
+      p_rows_total: 1,
+      p_rows_rejected: 0,
+      p_errors: [],
+    });
+    expect(result.error).not.toBeNull();
+    expect((await anon.from("import_jobs").select("id")).data ?? []).toHaveLength(0);
   });
 });

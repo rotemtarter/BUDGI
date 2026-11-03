@@ -1,6 +1,14 @@
 // Generated from budgi-dev (Supabase generate_typescript_types), trimmed to the
 // Database type. Regenerate after every migration.
 
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
@@ -182,8 +190,51 @@ export type Database = {
         }
         Relationships: []
       }
+      import_jobs: {
+        Row: {
+          campaigns_created: number
+          completed_at: string | null
+          created_at: string
+          error_summary: Json | null
+          file_name: string
+          id: string
+          rows_imported: number
+          rows_rejected: number
+          rows_total: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          campaigns_created?: number
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: Json | null
+          file_name: string
+          id?: string
+          rows_imported?: number
+          rows_rejected?: number
+          rows_total?: number
+          status: string
+          user_id?: string
+        }
+        Update: {
+          campaigns_created?: number
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: Json | null
+          file_name?: string
+          id?: string
+          rows_imported?: number
+          rows_rejected?: number
+          rows_total?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          business_name: string | null
           created_at: string
           display_name: string | null
           email: string | null
@@ -191,6 +242,7 @@ export type Database = {
           onboarding_completed_at: string | null
         }
         Insert: {
+          business_name?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -198,6 +250,7 @@ export type Database = {
           onboarding_completed_at?: string | null
         }
         Update: {
+          business_name?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -211,6 +264,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      commit_import: {
+        Args: {
+          p_errors: Json
+          p_file_name: string
+          p_rows: Json
+          p_rows_rejected: number
+          p_rows_total: number
+        }
+        Returns: Json
+      }
       complete_onboarding: {
         Args: { p_budget: number; p_month: string; p_revenue_goal: number }
         Returns: undefined

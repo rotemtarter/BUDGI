@@ -3,7 +3,8 @@
 import { useState, useTransition, type ReactNode } from "react";
 import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { SourceBadge } from "@/components/campaigns/badges";
@@ -27,6 +28,13 @@ export function WeeksSection({ campaignId, weeks }: { campaignId: string; weeks:
 
   const openFor = (date: string) => setDialog({ open: true, date });
 
+  // Import a file (for example one row per ad) into this campaign
+  const importLink = (
+    <Link href={`/imports?campaign=${campaignId}`} className={buttonVariants({ variant: "secondary" })}>
+      ייבוא קובץ
+    </Link>
+  );
+
   const confirmDelete = () => {
     if (!toDelete) return;
     startDelete(async () => {
@@ -46,7 +54,12 @@ export function WeeksSection({ campaignId, weeks }: { campaignId: string; weeks:
         <h2 id="weeks-title" className="type-h3">
           נתונים שבועיים
         </h2>
-        {weeks.length > 0 && <Button onClick={() => openFor(today())}>הוספת שבוע</Button>}
+        {weeks.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => openFor(today())}>הוספת שבוע</Button>
+            {importLink}
+          </div>
+        )}
       </div>
 
       {weeks.length === 0 ? (
@@ -54,7 +67,12 @@ export function WeeksSection({ campaignId, weeks }: { campaignId: string; weeks:
           icon={CalendarPlus}
           title="עוד לא הוזנו נתונים לקמפיין הזה"
           description="הזן את נתוני הביצועים של שבוע אחד — הוצאה, לידים, עסקאות, לקוחות חדשים או הכנסות."
-          actions={<Button onClick={() => openFor(today())}>הוספת שבוע</Button>}
+          actions={
+            <>
+              <Button onClick={() => openFor(today())}>הוספת שבוע</Button>
+              {importLink}
+            </>
+          }
         />
       ) : (
         <div

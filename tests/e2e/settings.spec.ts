@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { signInTestUser } from "../support/test-users";
 import { ensureUserAOnboarded, signInContext } from "./support";
 
 test.beforeAll(async () => {
@@ -63,4 +64,41 @@ test("sign out, sign back in, data is still there", async ({ page, context, base
   await signInContext(context, "A", baseURL!);
   await page.goto("/settings");
   await expect(page.getByLabel("מספר עסקאות")).toHaveValue(deals);
+});
+
+test("a business name replaces the Google name at the top, until it is emptied", async ({ page, isMobile }) => {
+  const { client, userId } = await signInTestUser("A");
+  await client.from("profiles").update({ business_name: null }).eq("id", userId);
+
+  // Desktop: the header; mobile: the top of the navigation drawer
+  const expectAccount = async (text: string | RegExp, icon: "icon-business" | "icon-user") => {
+    if (isMobile) await page.getByRole("button", { name: "פתיחת תפריט ניווט" }).click();
+    const name = page.getByTestId("header-user-name").filter({ visible: true });
+    if (typeof text === "string") await expect(name).toHaveText(text);
+    else await expect(name).not.toHaveText(text);
+    await expect(page.getByTestId(icon).filter({ visible: true })).toBeVisible();
+    if (isMobile) await page.keyboard.press("Escape");
+  };
+
+  await page.goto("/settings");
+  const field = page.getByLabel("שם בית העסק");
+  await expect(field).toHaveValue("");
+  await expectAccount(/מאפיית רותם/, "icon-user");
+
+  await field.fill("  מאפיית רותם  ");
+  await page.getByRole("button", { name: "שמירה", exact: true }).click();
+  await expect(page.getByText("שם בית העסק נשמר")).toBeVisible();
+  await expectAccount("מאפיית רותם", "icon-business");
+
+  // Kept on every screen and after a reload
+  await page.goto("/campaigns");
+  await expectAccount("מאפיית רותם", "icon-business");
+
+  // Emptying it brings the Google name back
+  await page.goto("/settings");
+  await expect(field).toHaveValue("מאפיית רותם");
+  await field.fill("");
+  await page.getByRole("button", { name: "שמירה", exact: true }).click();
+  await expect(page.getByText("יוצג השם מחשבון Google")).toBeVisible();
+  await expectAccount(/מאפיית רותם/, "icon-user");
 });

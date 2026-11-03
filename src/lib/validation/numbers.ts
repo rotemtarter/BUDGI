@@ -10,43 +10,39 @@ type NumberFieldOptions = {
   requiredMessage?: string;
 };
 
-// A form text field holding a number. Accepts "12,500" and "₪12,500".
-// Empty → null ("not entered"), never 0 (PRD 4.8).
+export type ParsedNumber = { ok: true; value: number | null } | { ok: false; message: string };
+
+// Parses a number typed as text. Accepts "12,500" and "₪12,500".
+// Empty → null ("not entered"), never 0 (PRD 4.8). Shared by the forms and the import.
+export function parseNumber(raw: string, { integer = false }: { integer?: boolean } = {}): ParsedNumber {
+  const value = raw.replace(/[\s,₪]/g, "");
+  if (value === "") return { ok: true, value: null };
+
+  if (!/^-?\d+(\.\d+)?$/.test(value)) return { ok: false, message: "יש להזין מספר" };
+
+  const number = Number(value);
+  if (number < 0) return { ok: false, message: "יש להזין מספר שאינו שלילי" };
+  if (integer && !Number.isInteger(number)) return { ok: false, message: "יש להזין מספר שלם" };
+  if (!integer && /\.\d{3,}$/.test(value)) {
+    return { ok: false, message: "אפשר להזין עד שתי ספרות אחרי הנקודה" };
+  }
+  if (number > (integer ? MAX_INTEGER : MAX_VALUE)) return { ok: false, message: "המספר גדול מדי" };
+  return { ok: true, value: number };
+}
+
+// A form text field holding a number (see parseNumber)
 export function numberField({ integer = false, requiredMessage }: NumberFieldOptions = {}) {
   return z.string().transform((raw, ctx): number | null => {
-    const value = raw.replace(/[\s,₪]/g, "");
-
-    if (value === "") {
-      if (requiredMessage) {
-        ctx.addIssue({ code: "custom", message: requiredMessage });
-        return z.NEVER;
-      }
-      return null;
-    }
-
-    if (!/^-?\d+(\.\d+)?$/.test(value)) {
-      ctx.addIssue({ code: "custom", message: "יש להזין מספר" });
+    const parsed = parseNumber(raw, { integer });
+    if (!parsed.ok) {
+      ctx.addIssue({ code: "custom", message: parsed.message });
       return z.NEVER;
     }
-
-    const number = Number(value);
-    if (number < 0) {
-      ctx.addIssue({ code: "custom", message: "יש להזין מספר שאינו שלילי" });
+    if (parsed.value === null && requiredMessage) {
+      ctx.addIssue({ code: "custom", message: requiredMessage });
       return z.NEVER;
     }
-    if (integer && !Number.isInteger(number)) {
-      ctx.addIssue({ code: "custom", message: "יש להזין מספר שלם" });
-      return z.NEVER;
-    }
-    if (!integer && /\.\d{3,}$/.test(value)) {
-      ctx.addIssue({ code: "custom", message: "אפשר להזין עד שתי ספרות אחרי הנקודה" });
-      return z.NEVER;
-    }
-    if (number > (integer ? MAX_INTEGER : MAX_VALUE)) {
-      ctx.addIssue({ code: "custom", message: "המספר גדול מדי" });
-      return z.NEVER;
-    }
-    return number;
+    return parsed.value;
   });
 }
 

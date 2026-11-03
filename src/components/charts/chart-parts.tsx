@@ -34,7 +34,11 @@ export function AmountTick({ x, y, payload }: { x?: number; y?: number; payload?
   );
 }
 
-export function ChartLegend({ bars }: { bars?: boolean }) {
+// Dash pattern of the forecast lines (DESIGN.md 2.4)
+export const FORECAST_DASH = "6 4";
+
+// `forecast` adds the dashed "expected" line item (DESIGN.md 1.8)
+export function ChartLegend({ bars, forecast }: { bars?: boolean; forecast?: boolean }) {
   return (
     <ul className="flex flex-wrap gap-4 type-small text-brand-dark" aria-hidden>
       <li className="flex items-center gap-2">
@@ -45,6 +49,14 @@ export function ChartLegend({ bars }: { bars?: boolean }) {
         <span className="size-3 rounded-sm" style={{ background: SPEND_COLOR }} />
         הוצאות
       </li>
+      {forecast && (
+        <li className="flex items-center gap-2">
+          <svg width="24" height="4" aria-hidden>
+            <line x1="0" y1="2" x2="24" y2="2" stroke={AXIS_COLOR} strokeWidth="2" strokeDasharray="4 3" />
+          </svg>
+          צפוי (מקווקו)
+        </li>
+      )}
     </ul>
   );
 }

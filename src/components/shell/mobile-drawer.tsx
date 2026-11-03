@@ -20,8 +20,8 @@ export function MobileDrawer({ account }: { account?: ReactNode }) {
       </SheetTrigger>
       <SheetContent side="right" className="w-72 gap-6 bg-white p-4 pt-14 supports-backdrop-filter:backdrop-blur-none">
         <SheetTitle className="sr-only">תפריט ניווט</SheetTitle>
-        <div className="w-28 px-3">
-          <Logo sizes="112px" />
+        <div className="w-24 px-3">
+          <Logo sizes="96px" />
         </div>
         {account && <div className="border-b border-brand-light-gray px-3 pb-4">{account}</div>}
         <SidebarNav onNavigate={() => setOpen(false)} />

@@ -14,7 +14,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       <DecorativeBackground />
       <div className="flex w-full max-w-[420px] flex-col items-center gap-8 rounded-xl border border-brand-light-gray bg-white px-6 py-10 shadow-card md:px-10">
         <div className="w-full max-w-[280px]">
-          <Logo priority sizes="280px" />
+          <Logo variant="full" priority sizes="280px" />
         </div>
         <h1 className="sr-only">התחברות ל-Budgi</h1>
         <div className="flex w-full flex-col items-center gap-3">

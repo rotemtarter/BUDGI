@@ -21,6 +21,8 @@ import {
   type WeekPoint,
   type WeekRow,
 } from "./metrics";
+import { forecastSeries, monthForecast, type ForecastPoint, type MonthForecast } from "./forecast";
+import type { MonthGoals } from "@/server/repositories/goals";
 
 // Data for the home, metrics and budget screens (DESIGN.md 1.3, 1.6, 1.7).
 // Metrics are calculated on read; nothing is stored (ARCHITECTURE.md 5.1).
@@ -207,6 +209,53 @@ export async function getBudgetData(month: string): Promise<BudgetData> {
 // Months in the budget picker: from the first month to next month (as with goals)
 export async function getBudgetMonths(): Promise<{ first: string; last: string }> {
   return { first: await getFirstMonth(), last: addMonths(currentMonth(), 1) };
+}
+
+export type GoalForecast = { value: number | null; target: number | null; progress: number | null };
+
+export type ForecastData = {
+  month: string;
+  hasData: boolean;
+  forecast: MonthForecast;
+  budget: number | null;
+  goals: MonthGoals;
+  // Expected (or for an ended month, actual) progress to each goal
+  progress: Record<keyof MonthGoals, GoalForecast>;
+  chart: ForecastPoint[];
+};
+
+// Forecast screen (DESIGN.md 1.8, ADR-10): the month and the three months
+// before it (for the history), in one query
+export async function getForecastData(month: string): Promise<ForecastData> {
+  const ended = month < currentMonth();
+  const [rows, budget, goals] = await Promise.all([
+    listWeeksInRange(addDays(addMonths(month, -3), -6), lastDayOfMonth(month)),
+    getMonthBudget(month),
+    getGoalsForMonth(month),
+  ]);
+  const forecast = monthForecast(rows, month, { ended });
+  const value = (field: "revenue" | "deals" | "leads" | "roas") =>
+    ended ? forecast[field].actual : forecast[field].forecast;
+  const goal = (v: number | null, target: number | null): GoalForecast => ({
+    value: v,
+    target,
+    progress: goalProgress(v, target),
+  });
+
+  return {
+    month,
+    hasData: hasPeriodData(rows, { kind: "month", month }),
+    forecast,
+    budget,
+    goals,
+    progress: {
+      revenue: goal(value("revenue"), goals.revenue),
+      deals: goal(value("deals"), goals.deals),
+      leads: goal(value("leads"), goals.leads),
+      min_roas: goal(value("roas"), goals.min_roas),
+    },
+    chart: forecastSeries(rows, month, forecast),
+  };
 }
 
 function groupByCampaign(rows: CampaignWeekRow[]): Map<string, WeekRow[]> {

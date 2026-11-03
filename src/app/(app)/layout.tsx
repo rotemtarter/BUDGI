@@ -11,8 +11,8 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-full flex-1">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 border-e border-brand-light-gray bg-white px-4 py-6 md:flex">
-        <div className="w-32 px-3">
-          <Logo priority sizes="128px" />
+        <div className="w-24 px-3">
+          <Logo priority sizes="96px" />
         </div>
         <SidebarNav />
       </aside>

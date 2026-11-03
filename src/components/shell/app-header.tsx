@@ -19,8 +19,8 @@ export function AppHeader() {
           }
         />
       </div>
-      <Link href="/dashboard" className="mx-auto w-24 md:hidden" aria-label="Budgi — מסך הבית">
-        <Logo sizes="96px" />
+      <Link href="/dashboard" className="mx-auto w-16 md:hidden" aria-label="Budgi — מסך הבית">
+        <Logo sizes="64px" />
       </Link>
       <div className="flex items-center gap-2 md:ms-auto">
         <div className="hidden md:flex">

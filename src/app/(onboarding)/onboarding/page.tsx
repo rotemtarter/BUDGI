@@ -14,8 +14,8 @@ export default function OnboardingPage() {
   return (
     <main className="relative isolate mx-auto flex w-full max-w-[560px] flex-1 flex-col items-center gap-6 px-4 py-10">
       <DecorativeBackground />
-      <div className="w-40">
-        <Logo priority sizes="160px" />
+      <div className="w-28">
+        <Logo priority sizes="112px" />
       </div>
       <div className="flex flex-col gap-2 text-center">
         <h1 className="type-h2">ברוכים הבאים ל-Budgi</h1>

@@ -6,8 +6,8 @@ import { Logo } from "@/components/brand/logo";
 export default function LegalLayout({ children }: LayoutProps<"/">) {
   return (
     <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col gap-8 px-4 py-10">
-      <div className="w-32">
-        <Logo sizes="128px" />
+      <div className="w-24">
+        <Logo sizes="96px" />
       </div>
       <article className="flex flex-col gap-4 rounded-xl border border-brand-light-gray bg-white p-6 shadow-card md:p-8">
         {children}

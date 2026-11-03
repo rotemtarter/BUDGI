@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => ({
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts", "tests/rls/**/*.test.ts"],
     // RLS and integration tests share the two test users in budgi-dev
     fileParallelism: false,
+    // budgi-dev is a remote project; several requests per hook can take a while
+    hookTimeout: 30_000,
+    testTimeout: 30_000,
     // Load all variables from .env (not only VITE_*) for integration tests
     env: loadEnv(mode, process.cwd(), ""),
   },

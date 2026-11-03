@@ -34,8 +34,14 @@ export async function signInTestUser(key: TestUserKey) {
   return { client, userId: data.user.id };
 }
 
-// Removes the user's budgets and goals and marks onboarding as not done
+// Removes the user's campaigns, weekly data, budgets and goals and marks
+// onboarding as not done
 export async function resetTestUser(client: SupabaseClient<Database>, userId: string) {
+  // Weekly rows first: a campaign with weekly data cannot be deleted
+  for (const table of ["campaign_performance", "campaign_budgets", "campaigns"] as const) {
+    const result = await client.from(table).delete().eq("user_id", userId);
+    if (result.error) throw result.error;
+  }
   const goals = await client.from("business_goals").delete().eq("user_id", userId);
   if (goals.error) throw goals.error;
   const budgets = await client.from("budgets").delete().eq("user_id", userId);

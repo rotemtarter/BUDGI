@@ -10,6 +10,9 @@ let a: { client: SupabaseClient<Database>; userId: string };
 let b: { client: SupabaseClient<Database>; userId: string };
 let aBudgetId: string;
 let aGoalId: string;
+let aCampaignId: string;
+let aCampaignBudgetId: string;
+let aWeekId: string;
 
 beforeAll(async () => {
   a = await signInTestUser("A");
@@ -31,6 +34,30 @@ beforeAll(async () => {
     .single();
   if (goal.error) throw goal.error;
   aGoalId = goal.data.id;
+
+  const campaign = await a.client
+    .from("campaigns")
+    .insert({ name: "A campaign", platform: "google_ads" })
+    .select("id")
+    .single();
+  if (campaign.error) throw campaign.error;
+  aCampaignId = campaign.data.id;
+
+  const campaignBudget = await a.client
+    .from("campaign_budgets")
+    .insert({ campaign_id: aCampaignId, month: MONTH, planned_amount: 500 })
+    .select("id")
+    .single();
+  if (campaignBudget.error) throw campaignBudget.error;
+  aCampaignBudgetId = campaignBudget.data.id;
+
+  const week = await a.client
+    .from("campaign_performance")
+    .insert({ campaign_id: aCampaignId, week_start: "2031-01-05", spend: 100 })
+    .select("id")
+    .single();
+  if (week.error) throw week.error;
+  aWeekId = week.data.id;
 });
 
 afterAll(async () => {
@@ -101,12 +128,27 @@ describe("RLS: budgets and business_goals", () => {
 
   it("anonymous visitors cannot read anything", async () => {
     const anon = anonClient();
-    for (const table of ["budgets", "business_goals", "profiles"] as const) {
+    for (const table of [
+      "budgets",
+      "business_goals",
+      "profiles",
+      "campaigns",
+      "campaign_budgets",
+      "campaign_performance",
+    ] as const) {
       const result = await anon.from(table).select("*");
       expect(result.data ?? []).toEqual([]);
     }
     const rpc = await anon.rpc("ensure_month_defaults", { p_month: MONTH });
     expect(rpc.error?.code).toBe("42501");
+
+    // Supabase's helper behind automatic RLS on new tables is not callable from the API
+    // (not in the generated types, so called by name)
+    for (const client of [anon, b.client]) {
+      const callable = client as unknown as { rpc: (fn: string) => Promise<{ error: { code?: string } | null }> };
+      const helper = await callable.rpc("rls_auto_enable");
+      expect(helper.error?.code).toBe("42501");
+    }
   });
 });
 
@@ -127,6 +169,68 @@ describe("RLS: profiles", () => {
 
   it("name and email are read-only", async () => {
     const result = await a.client.from("profiles").update({ display_name: "x" }).eq("id", a.userId);
+    expect(result.error?.code).toBe("42501");
+  });
+});
+
+describe("RLS: campaigns, campaign budgets and weekly rows", () => {
+  it("B cannot read A's rows", async () => {
+    expect((await b.client.from("campaigns").select("id").eq("id", aCampaignId)).data).toEqual([]);
+    expect((await b.client.from("campaign_budgets").select("id").eq("id", aCampaignBudgetId)).data).toEqual([]);
+    expect((await b.client.from("campaign_performance").select("id").eq("id", aWeekId)).data).toEqual([]);
+  });
+
+  it("B cannot update A's rows", async () => {
+    const campaign = await b.client.from("campaigns").update({ name: "x" }).eq("id", aCampaignId).select("id");
+    expect(campaign.data).toEqual([]);
+    const budget = await b.client
+      .from("campaign_budgets")
+      .update({ planned_amount: 1 })
+      .eq("id", aCampaignBudgetId)
+      .select("id");
+    expect(budget.data).toEqual([]);
+    const week = await b.client.from("campaign_performance").update({ spend: 1 }).eq("id", aWeekId).select("id");
+    expect(week.data).toEqual([]);
+
+    const check = await a.client.from("campaign_performance").select("spend").eq("id", aWeekId).single();
+    expect(Number(check.data?.spend)).toBe(100);
+  });
+
+  it("B cannot delete A's rows", async () => {
+    await b.client.from("campaign_performance").delete().eq("id", aWeekId);
+    await b.client.from("campaign_budgets").delete().eq("id", aCampaignBudgetId);
+    await b.client.from("campaigns").delete().eq("id", aCampaignId);
+
+    expect((await a.client.from("campaign_performance").select("id").eq("id", aWeekId)).data).toHaveLength(1);
+    expect((await a.client.from("campaign_budgets").select("id").eq("id", aCampaignBudgetId)).data).toHaveLength(1);
+    expect((await a.client.from("campaigns").select("id").eq("id", aCampaignId)).data).toHaveLength(1);
+  });
+
+  it("B cannot add a week or a budget to A's campaign", async () => {
+    // As B's own row: the campaign is not B's, so the composite foreign key fails
+    const ownWeek = await b.client
+      .from("campaign_performance")
+      .insert({ campaign_id: aCampaignId, week_start: "2031-01-12", spend: 1 });
+    expect(ownWeek.error).not.toBeNull();
+    const ownBudget = await b.client
+      .from("campaign_budgets")
+      .insert({ campaign_id: aCampaignId, month: "2031-02-01", planned_amount: 1 });
+    expect(ownBudget.error).not.toBeNull();
+
+    // As A's row: blocked by RLS
+    const asA = await b.client
+      .from("campaign_performance")
+      .insert({ user_id: a.userId, campaign_id: aCampaignId, week_start: "2031-01-12", spend: 1 });
+    expect(asA.error?.code).toBe("42501");
+
+    const weeks = await a.client.from("campaign_performance").select("id").eq("campaign_id", aCampaignId);
+    expect(weeks.data).toHaveLength(1);
+  });
+
+  it("B cannot create a campaign for A", async () => {
+    const result = await b.client
+      .from("campaigns")
+      .insert({ user_id: a.userId, name: "Not mine", platform: "meta_ads" });
     expect(result.error?.code).toBe("42501");
   });
 });

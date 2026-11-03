@@ -19,7 +19,7 @@ export default function DashboardPage() {
         description="צור קמפיין והזן נתונים שבועיים, או ייבא קובץ עם הנתונים שלך."
         actions={
           <>
-            <Link href="/campaigns" className={buttonVariants()}>
+            <Link href="/campaigns/new" className={buttonVariants()}>
               הוספת קמפיין
             </Link>
             <Link href="/imports" className={buttonVariants({ variant: "secondary" })}>

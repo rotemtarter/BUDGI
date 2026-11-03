@@ -61,6 +61,127 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_budgets: {
+        Row: {
+          campaign_id: string
+          id: string
+          month: string
+          planned_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          month: string
+          planned_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          month?: string
+          planned_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_budgets_campaign_fkey"
+            columns: ["campaign_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      campaign_performance: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          deals: number | null
+          id: string
+          leads: number | null
+          new_customers: number | null
+          revenue: number | null
+          source: string
+          spend: number | null
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          deals?: number | null
+          id?: string
+          leads?: number | null
+          new_customers?: number | null
+          revenue?: number | null
+          source?: string
+          spend?: number | null
+          updated_at?: string
+          user_id?: string
+          week_start: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          deals?: number | null
+          id?: string
+          leads?: number | null
+          new_customers?: number | null
+          revenue?: number | null
+          source?: string
+          spend?: number | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_performance_campaign_fkey"
+            columns: ["campaign_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          platform: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          platform: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          platform?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

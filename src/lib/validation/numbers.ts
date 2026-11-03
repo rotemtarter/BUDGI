@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-// Largest value that fits numeric(12,2)
+// Largest value that fits numeric(12,2), and a Postgres integer
 const MAX_VALUE = 9_999_999_999.99;
+const MAX_INTEGER = 2_147_483_647;
 
 type NumberFieldOptions = {
   integer?: boolean;
@@ -41,7 +42,7 @@ export function numberField({ integer = false, requiredMessage }: NumberFieldOpt
       ctx.addIssue({ code: "custom", message: "אפשר להזין עד שתי ספרות אחרי הנקודה" });
       return z.NEVER;
     }
-    if (number > MAX_VALUE) {
+    if (number > (integer ? MAX_INTEGER : MAX_VALUE)) {
       ctx.addIssue({ code: "custom", message: "המספר גדול מדי" });
       return z.NEVER;
     }

@@ -16,3 +16,10 @@ export function formatNumberInput(value: number | null): string {
   if (value === null) return "";
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 }
+
+// Money that may be missing: null → "—". Rounded to whole shekels when asked
+// (calculated values such as split spend or CPL).
+export function formatMoney(amount: number | null, { whole = false } = {}): string {
+  if (amount === null) return "—";
+  return formatILS(whole ? Math.round(amount) : Math.round(amount * 100) / 100);
+}

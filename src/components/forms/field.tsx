@@ -19,7 +19,7 @@ export function Field({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>
+      <Label id={`${id}-label`} htmlFor={id}>
         {label}
         {required && (
           <span aria-hidden className="text-error">

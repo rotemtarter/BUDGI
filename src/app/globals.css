@@ -5,6 +5,8 @@
 /* Budgi brand palette (DESIGN.md 2.1). Light theme only. */
 :root {
   --brand-purple: #6b3bff;
+  /* Purple text and icons on light backgrounds (DESIGN.md 2.1) */
+  --brand-text-purple: #814ac9;
   --brand-violet: #8b5cff;
   --brand-indigo: #a78bfa;
   --brand-blue: #00c6ff;
@@ -19,7 +21,7 @@
   --status-error: #dc2626;
 
   /* Button gradient is the only gradient allowed under white text */
-  --gradient-button: linear-gradient(90deg, #5a2ee8, #7c4dff);
+  --gradient-button: linear-gradient(90deg, #603e9f, #814ac9);
   --gradient-purple: linear-gradient(90deg, #6b3bff, #a78bfa);
   --gradient-blue: linear-gradient(90deg, #00c6ff, #a78bfa);
 
@@ -34,14 +36,14 @@
   --card-foreground: var(--brand-dark);
   --popover: #ffffff;
   --popover-foreground: var(--brand-dark);
-  --primary: var(--brand-purple);
+  --primary: var(--brand-text-purple);
   --primary-foreground: #ffffff;
   --secondary: #ffffff;
-  --secondary-foreground: var(--brand-purple);
+  --secondary-foreground: var(--brand-text-purple);
   --muted: #f1f5f9;
   --muted-foreground: var(--brand-gray);
   --accent: #f3efff;
-  --accent-foreground: var(--brand-purple);
+  --accent-foreground: var(--brand-text-purple);
   --destructive: var(--status-error);
   --border: var(--brand-light-gray);
   --input: var(--brand-light-gray);
@@ -166,4 +168,16 @@
 }
 @utility bg-gradient-blue {
   background-image: var(--gradient-blue);
+}
+
+/* Sonner on phones sets left, right and width: 100% on the toaster. In RTL the
+   browser then ignores `left`, so the toaster sticks out past the left edge and
+   the whole page scrolls sideways. Let left/right define the width instead. */
+@media (max-width: 600px) {
+  [data-sonner-toaster] {
+    width: auto !important;
+  }
+  [data-sonner-toaster] [data-sonner-toast] {
+    width: 100% !important;
+  }
 }

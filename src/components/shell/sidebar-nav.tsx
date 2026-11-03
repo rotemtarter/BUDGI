@@ -1,19 +1,35 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, isActive } from "./nav-items";
 
-// Navigation list shared by the desktop sidebar and the mobile drawer
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
+type Props = { onNavigate?: () => void };
 
+// Navigation list shared by the desktop sidebar and the mobile drawer.
+// On dynamic routes (e.g. /campaigns/[id]) the path is known only at request
+// time, so the list is prerendered without a selected item and streams in.
+export function SidebarNav(props: Props) {
+  return (
+    <Suspense fallback={<NavList {...props} pathname={null} />}>
+      <CurrentNavList {...props} />
+    </Suspense>
+  );
+}
+
+function CurrentNavList(props: Props) {
+  const pathname = usePathname();
+  return <NavList {...props} pathname={pathname} />;
+}
+
+function NavList({ onNavigate, pathname }: Props & { pathname: string | null }) {
   return (
     <nav aria-label="ניווט ראשי">
       <ul className="flex flex-col gap-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = isActive(pathname, href);
+          const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href}>
               <Link

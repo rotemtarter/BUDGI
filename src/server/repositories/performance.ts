@@ -80,3 +80,16 @@ export async function deleteWeek(campaignId: string, weekStart: string) {
     .eq("week_start", weekStart);
   if (error) throw error;
 }
+
+// Sunday of the user's earliest week with data, or null
+export async function getFirstWeekStart(): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("campaign_performance")
+    .select("week_start")
+    .order("week_start", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.week_start ?? null;
+}

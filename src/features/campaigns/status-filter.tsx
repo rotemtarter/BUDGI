@@ -4,11 +4,12 @@ import type { CampaignStatus } from "@/lib/campaigns/platforms";
 
 export type StatusFilterValue = CampaignStatus | "all";
 
+// "All" comes first (product owner's request); "active" stays the default
 const OPTIONS: { value: StatusFilterValue; label: string }[] = [
+  { value: "all", label: "הכול" },
   { value: "active", label: "פעילים" },
   { value: "paused", label: "מושהים" },
   { value: "ended", label: "הסתיימו" },
-  { value: "all", label: "הכול" },
 ];
 
 // Status filter above the campaigns table (DESIGN.md 1.4); kept in the URL

@@ -13,12 +13,13 @@ import {
 import { ADVISOR_MESSAGES } from "@/lib/advisor/messages";
 import { AiError, requestAdvice, type AiFailure } from "@/server/ai/openai";
 import { advisorInput } from "@/server/ai/prompt";
-import { getTodayUsage, recordQuestion } from "@/server/repositories/advisor-usage";
+import { acquireLock, getTodayUsage, recordQuestion, releaseLock } from "@/server/repositories/advisor-usage";
 import { loadAdvisorContext, type AdvisorContext } from "./advisor-context";
 
-// AI Advisor Service (ARCHITECTURE.md 5.6, 6.4; ADR-12): daily limit → context
-// → OpenAI → Zod → logic checks → count the question. Only an answered
-// question is counted. Nothing here writes budgets or campaigns.
+// AI Advisor Service (ARCHITECTURE.md 5.6, 6.4; ADR-12, ADR-14): daily limit →
+// lock (one question at a time) → context → OpenAI → Zod → logic checks →
+// count the question. Only an answered question is counted. Nothing here
+// writes budgets or campaigns.
 
 const MAX_INCREASE_PERCENT = 200;
 const MAX_DECREASE_PERCENT = 100;
@@ -91,11 +92,24 @@ export type AdvisorFailure = AiFailure | "invalid_output";
 export type AdvisorResult =
   | { kind: "ok"; reply: AdvisorReply; remaining: number }
   | { kind: "limit" }
+  // Another question of the same user is still being answered
+  | { kind: "busy" }
   | { kind: "failed"; reason: AdvisorFailure };
 
 export async function askAdvisor(request: AdvisorRequest): Promise<AdvisorResult> {
-  if ((await getTodayUsage()) >= DAILY_QUESTION_LIMIT) return { kind: "limit" };
+  const lock = await acquireLock();
+  if (!lock) return { kind: "busy" };
+  try {
+    // Checked while holding the lock, so no other question can be counted meanwhile
+    if ((await getTodayUsage()) >= DAILY_QUESTION_LIMIT) return { kind: "limit" };
+    return await answer(request);
+  } finally {
+    // A lock that cannot be freed expires on its own after 70 seconds
+    await releaseLock(lock).catch(() => {});
+  }
+}
 
+async function answer(request: AdvisorRequest): Promise<AdvisorResult> {
   const context = await loadAdvisorContext();
   const history = request.history.slice(-MAX_HISTORY_MESSAGES);
 

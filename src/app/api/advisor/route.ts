@@ -38,6 +38,10 @@ export async function POST(request: Request) {
       log("limit");
       return json({ ok: false, limit: true, remaining: 0, message: ADVISOR_MESSAGES.limitReached }, 429);
     }
+    if (result.kind === "busy") {
+      log("busy");
+      return json({ ok: false, message: ADVISOR_MESSAGES.busy }, 409);
+    }
     if (result.kind === "failed") {
       if (result.reason === "missing_key") console.error("advisor: OPENAI_API_KEY is not set", { requestId });
       log(result.reason);

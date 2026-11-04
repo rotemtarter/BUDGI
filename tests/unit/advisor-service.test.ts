@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   requestAdvice: vi.fn(),
   getTodayUsage: vi.fn(),
   recordQuestion: vi.fn(),
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
   loadAdvisorContext: vi.fn(),
 }));
 
@@ -23,6 +25,8 @@ vi.mock("@/server/ai/openai", async () => {
 vi.mock("@/server/repositories/advisor-usage", () => ({
   getTodayUsage: mocks.getTodayUsage,
   recordQuestion: mocks.recordQuestion,
+  acquireLock: mocks.acquireLock,
+  releaseLock: mocks.releaseLock,
 }));
 vi.mock("@/server/services/advisor-context", () => ({ loadAdvisorContext: mocks.loadAdvisorContext }));
 
@@ -60,6 +64,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getTodayUsage.mockResolvedValue(3);
   mocks.recordQuestion.mockResolvedValue(4);
+  mocks.acquireLock.mockResolvedValue("lock-token");
+  mocks.releaseLock.mockResolvedValue(undefined);
   mocks.loadAdvisorContext.mockResolvedValue(context);
   mocks.requestAdvice.mockResolvedValue(JSON.stringify(valid));
 });
@@ -86,6 +92,23 @@ describe("askAdvisor", () => {
     expect(input[0].content).toContain('"campaigns"');
     expect(input.slice(1).map((m: { role: string }) => m.role)).toEqual(["user", "assistant", "user"]);
     expect(input.at(-1).content).toBe("ומה עם הלידים?");
+  });
+
+  it("answers one question at a time and always frees the lock", async () => {
+    mocks.acquireLock.mockResolvedValue(null);
+    expect(await askAdvisor(question)).toEqual({ kind: "busy" });
+    expect(mocks.getTodayUsage).not.toHaveBeenCalled();
+    expect(mocks.requestAdvice).not.toHaveBeenCalled();
+    expect(mocks.releaseLock).not.toHaveBeenCalled();
+
+    mocks.acquireLock.mockResolvedValue("lock-token");
+    await askAdvisor(question);
+    expect(mocks.releaseLock).toHaveBeenCalledWith("lock-token");
+
+    mocks.releaseLock.mockClear();
+    mocks.loadAdvisorContext.mockRejectedValue(new Error("db down"));
+    await expect(askAdvisor(question)).rejects.toThrow("db down");
+    expect(mocks.releaseLock).toHaveBeenCalledWith("lock-token");
   });
 
   it("stops at 20 questions a day without calling OpenAI", async () => {

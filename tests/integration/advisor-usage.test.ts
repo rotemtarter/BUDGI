@@ -71,3 +71,51 @@ describe("advisor_usage", () => {
     expect(error).not.toBeNull();
   });
 });
+
+describe("advisor_locks", () => {
+  async function acquire(user: User) {
+    const { data, error } = await user.client.rpc("advisor_acquire_lock");
+    if (error) throw error;
+    return data;
+  }
+
+  async function release(user: User, token: string) {
+    const { error } = await user.client.rpc("advisor_release_lock", { p_token: token });
+    if (error) throw error;
+  }
+
+  it("lets one question run at a time and frees only with the right token", async () => {
+    const token = await acquire(b);
+    expect(token).toMatch(/^[0-9a-f-]{36}$/);
+    // Taken: a second question waits
+    expect(await acquire(b)).toBeNull();
+    // Another user is not affected
+    const other = await acquire(a);
+    expect(other).not.toBeNull();
+    await release(a, other!);
+
+    // A wrong token does not free it
+    await release(b, "00000000-0000-0000-0000-000000000000");
+    expect(await acquire(b)).toBeNull();
+
+    await release(b, token!);
+    const again = await acquire(b);
+    expect(again).not.toBeNull();
+    await release(b, again!);
+  });
+
+  it("cannot be read or changed directly", async () => {
+    const token = await acquire(b);
+    const read = await b.client.from("advisor_locks").select("token");
+    expect(read.data ?? []).toEqual([]);
+    const remove = await b.client.from("advisor_locks").delete().eq("user_id", b.userId).select();
+    expect(remove.data ?? []).toEqual([]);
+    expect(await acquire(b)).toBeNull();
+    await release(b, token!);
+  });
+
+  it("cannot be taken without signing in", async () => {
+    const { error } = await anonClient().rpc("advisor_acquire_lock");
+    expect(error).not.toBeNull();
+  });
+});

@@ -110,6 +110,19 @@ describe("advisor context", () => {
     for (const key of ["email", "display_name", "business_name", "user_id"]) expect(json).not.toContain(key);
   });
 
+  it("sends at most 50 campaigns, the ones with the most spend first", () => {
+    const many = Array.from({ length: 60 }, (_, i) => campaign(`m${i}`));
+    const rowsByCampaign = new Map(many.map((c, i) => [c.id, [week("2026-11-01", { spend: i + 1 })]]));
+    const big = buildAdvisorContext(
+      input({ campaigns: many, rowsByCampaign, rows: [...rowsByCampaign.values()].flat(), campaignBudgets: new Map() }),
+    );
+    expect(big.campaigns).toHaveLength(50);
+    expect(big.campaigns_not_included).toBe(10);
+    expect(big.campaigns[0].id).toBe("m59");
+    expect(big.campaigns.map((c) => c.id)).not.toContain("m0");
+    expect(context.campaigns_not_included).toBe(0);
+  });
+
   it("marks an account without data", () => {
     const empty = buildAdvisorContext(
       input({ hasAnyData: false, rows: [], rowsByCampaign: new Map(), campaigns: [], campaignBudgets: new Map(), alerts: [] }),

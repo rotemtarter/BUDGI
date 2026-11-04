@@ -15,6 +15,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      advisor_locks: {
+        Row: {
+          locked_until: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          locked_until: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          locked_until?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       advisor_insights: {
         Row: {
           created_at: string
@@ -386,7 +404,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advisor_acquire_lock: { Args: never; Returns: string }
       advisor_record_question: { Args: never; Returns: number }
+      advisor_release_lock: { Args: { p_token: string }; Returns: undefined }
       commit_import: {
         Args: {
           p_errors: Json

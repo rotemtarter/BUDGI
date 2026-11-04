@@ -90,6 +90,8 @@ export type AdvisorContext = {
     expected_goal_progress_percent: { revenue: Value; deals: Value; leads: Value; min_roas: Value };
   };
   campaigns: ContextCampaign[];
+  // Campaigns left out to keep the request small (MAX_CAMPAIGNS)
+  campaigns_not_included: number;
   alerts_this_month: { type: AlertType; title: string; description: string; campaign_id: string | null }[];
 };
 
@@ -106,6 +108,8 @@ export type ContextInput = {
 };
 
 const MAX_ALERTS = 10;
+// Keeps the request to OpenAI small and its cost bounded (ADR-14)
+export const MAX_CAMPAIGNS = 50;
 
 const round = (value: number) => Math.round(value * 100) / 100;
 const num = (value: number | null): Value => (value === null ? null : round(value));
@@ -142,8 +146,9 @@ export function buildAdvisorContext(input: ContextInput): AdvisorContext {
   const expected = (field: "revenue" | "deals" | "leads" | "roas") => monthForecastResult[field].forecast;
 
   // Active campaigns, and any other campaign with a budget or data this month
-  // or last month
-  const campaigns = input.campaigns
+  // or last month. Above MAX_CAMPAIGNS, the ones with the most spend this month
+  // (then budget, then last month's spend) are sent.
+  const included = input.campaigns
     .map((c) => {
       const rows = input.rowsByCampaign.get(c.id) ?? [];
       const budget = input.campaignBudgets.get(c.id) ?? null;
@@ -166,6 +171,16 @@ export function buildAdvisorContext(input: ContextInput): AdvisorContext {
     })
     .filter(({ include }) => include)
     .map(({ campaign }) => campaign);
+  const weight = (c: ContextCampaign) => [c.this_month.spend ?? 0, c.monthly_budget ?? 0, c.previous_month.spend ?? 0];
+  const campaigns =
+    included.length <= MAX_CAMPAIGNS
+      ? included
+      : [...included]
+          .sort((x, y) => {
+            const [a, b] = [weight(x), weight(y)];
+            return b[0] - a[0] || b[1] - a[1] || b[2] - a[2];
+          })
+          .slice(0, MAX_CAMPAIGNS);
 
   const campaignBudgets = [...input.campaignBudgets.values()];
 
@@ -206,6 +221,7 @@ export function buildAdvisorContext(input: ContextInput): AdvisorContext {
       },
     },
     campaigns,
+    campaigns_not_included: included.length - campaigns.length,
     alerts_this_month: input.alerts
       .filter((a) => a.month === month)
       .slice(0, MAX_ALERTS)

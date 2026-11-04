@@ -1158,3 +1158,15 @@ Production. עד Milestone 9 לא קיים אף Production Deployment.
 - השמירה והמחיקה הן Server Actions (`src/features/advisor/actions.ts`); הרשימה נטענת בשרת עם המסך.
 
 **השלכות:** Migration `20261104075803_advisor_insights.sql` הוחל על `budgi-dev`; ב-Milestone 9 יש להחיל אותו גם על `budgi-prod` ולחשוף את הטבלה ב-Data API. שמות קמפיינים בתובנה ישנה נשארים כפי שהיו גם אם הקמפיין שונה או נמחק.
+
+### ADR-14: הקשחת אבטחה אחרי סקירה — שאלה אחת בכל רגע, כותרות אבטחה, מגבלות אורך במסד הנתונים וספריות פיתוח
+
+**הקשר:** סקירת אבטחה של כל המערכת (אחרי Milestone 8) לא מצאה פרצה חמורה: RLS בכל הטבלאות, אין Secrets ב-Git או בדפדפן, כל פעולה בודקת Session וקלט. נמצאו ארבעה פערים: (1) בקשות במקביל ל-`/api/advisor` עברו כולן את בדיקת המגבלה היומית לפני שהמונה עלה, ולכן אפשר היה לגרום להרבה קריאות ל-OpenAI (עלות); (2) אין כותרות אבטחה, והאתר יכול להיות מוצג בתוך מסגרת של אתר אחר (Clickjacking); (3) מגבלות האורך של שם ותיאור קמפיין קיימות רק בטפסים, ובקשה שעוקפת את האפליקציה יכלה לשמור טקסט ענק שנשלח ל-AI; (4) `npm audit` מצא 6 פגיעויות (נמוכות–בינוניות) — כולן דרך חבילת `shadcn`, כלי CLI שלא רץ בזמן ריצה.
+
+**החלטה:**
+- **נעילה לשאלה אחת:** טבלה `advisor_locks` (בלי הרשאות ישירות) ושתי פונקציות `security definer`: `advisor_acquire_lock()` לוקחת נעילה ל-70 שניות (יותר ממגבלת 60 השניות של ה-Route) ומחזירה Token אקראי, או `null` אם יש שאלה אחרת בטיפול; `advisor_release_lock(token)` משחררת רק עם ה-Token שלקח אותה. ה-Token נוצר ונשמר בשרת ולא נשלח לדפדפן, ולכן המשתמש אינו יכול לשחרר נעילה של השרת. בדיקת המגבלה היומית רצה בזמן שהנעילה מוחזקת. שאלה במקביל מקבלת 409 עם הודעה בעברית; הנעילה משתחררת גם בכשל.
+- **כותרות אבטחה** לכל התשובות (`next.config.ts`): `Content-Security-Policy: frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` שחוסם מצלמה, מיקרופון, מיקום ותשלום; וללא `X-Powered-By`. CSP מלא (scripts) לא נוסף ב-MVP — הוא דורש nonce לכל הסקריפטים של Next.js.
+- **מגבלות במסד הנתונים** (Migration `length_limits`): שם קמפיין עד 100 תווים, תיאור עד 500, `threshold_config` עד 1,000 בתים, `error_summary` עד 100 שגיאות ו-100KB. ל-AI נשלחים לכל היותר 50 קמפיינים (לפי הוצאה החודש, תקציב והוצאה בחודש הקודם), עם `campaigns_not_included`.
+- **`shadcn` הועבר ל-`devDependencies`:** משמש רק בבנייה (קובץ CSS). `npm audit --omit=dev` נקי.
+
+**השלכות:** Migrations `20261104131224_advisor_lock.sql` ו-`20261104131359_length_limits.sql` הוחלו על `budgi-dev`; ב-Milestone 9 יש להחיל אותם גם על `budgi-prod`. אין שינוי בהתנהגות למשתמש רגיל (הקלט ממילא מושבת בזמן המתנה). הגנת „סיסמאות שדלפו” ב-Supabase כבויה ב-`budgi-dev` בלבד (משתמשי בדיקה); ב-Production אין Email/Password.

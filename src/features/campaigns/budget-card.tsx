@@ -17,16 +17,18 @@ import { formatMonthLabel } from "@/lib/dates/month";
 import { campaignBudgetSchema, type CampaignBudgetInput } from "@/lib/validation/campaigns";
 import { saveCampaignBudgetAction } from "./actions";
 
-// This month's budget card on campaign details (DESIGN.md 1.5): planned
-// (editable), actual spend and what is left
+// The chosen month's budget card on campaign details (DESIGN.md 1.5):
+// planned (editable), actual spend and what is left, with the campaign name
 export function BudgetCard({
   campaignId,
+  campaignName,
   month,
   budget,
   spend,
   remaining,
 }: {
   campaignId: string;
+  campaignName: string;
   month: string;
   budget: number | null;
   spend: number | null;
@@ -64,12 +66,15 @@ export function BudgetCard({
   });
 
   const error = errors.budget?.message;
-  const label = `תקציב ${formatMonthLabel(month)}`;
+  const label = `תקציב ${formatMonthLabel(month)} · `;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{label}</CardTitle>
+        <CardTitle>
+          {label}
+          <bdi>{campaignName}</bdi>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <dl className="grid gap-4 sm:grid-cols-3">

@@ -98,6 +98,9 @@ test.afterAll(async () => {
 test("home shows every goal, the forecast, the latest alerts and insights", async ({ page }, info) => {
   await page.goto("/dashboard");
 
+  // The budget ring with the used share written out
+  await expect(page.getByText(/^נוצלו [\d.]+% מהתקציב$/).filter({ visible: true })).toBeVisible();
+
   const goals = visible(page).region("התקדמות ליעדים");
   await expect(goals.getByRole("progressbar")).toHaveCount(3);
   await expect(goals.getByRole("progressbar", { name: "התקדמות ליעד העסקאות" })).toBeVisible();

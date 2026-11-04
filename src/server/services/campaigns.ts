@@ -1,8 +1,10 @@
 import "server-only";
-import { addMonths, currentMonth } from "@/lib/dates/month";
+import { addMonths, currentMonth, isMonth } from "@/lib/dates/month";
+import { weekMonth } from "@/lib/dates/period";
 import { getCampaign, getCampaignBudgets, listCampaigns, type Campaign } from "@/server/repositories/campaigns";
 import { listWeeks, listWeeksInRange, type CampaignWeek } from "@/server/repositories/performance";
 import {
+  hasPeriodData,
   lastDayOfMonth,
   monthSummary,
   percentChange,
@@ -58,7 +60,10 @@ export async function getCampaignsOverview(): Promise<{ month: string; campaigns
 
 export type CampaignDetails = {
   campaign: Campaign;
+  // The month of the budget and KPI cards, and the months the picker offers
   month: string;
+  firstMonth: string;
+  lastMonth: string;
   weeks: CampaignWeek[];
   budget: number | null;
   remaining: number | null;
@@ -68,18 +73,33 @@ export type CampaignDetails = {
 };
 
 // Campaign details screen (DESIGN.md 1.5). null when not found or not the user's.
-export async function getCampaignDetails(id: string): Promise<CampaignDetails | null> {
+// `requested` is the month in the URL (?month=YYYY-MM-01). Without it: this
+// month when it has data, otherwise the latest month with data (ADR-19).
+export async function getCampaignDetails(id: string, requested?: string): Promise<CampaignDetails | null> {
   const campaign = await getCampaign(id);
   if (!campaign) return null;
 
-  const month = currentMonth();
-  const [weeks, budgets] = await Promise.all([listWeeks(id), getCampaignBudgets(month)]);
+  const weeks = await listWeeks(id);
+  const thisMonth = currentMonth();
+  const weekMonths = weeks.map((w) => weekMonth(w.week_start)).sort();
+  const firstMonth = [weekMonths[0], thisMonth].filter(Boolean).sort()[0];
+  const lastMonth = addMonths(thisMonth, 1);
+  const latestWithData = weekMonths[weekMonths.length - 1];
+
+  let month: string;
+  if (requested && isMonth(requested) && requested >= firstMonth && requested <= lastMonth) month = requested;
+  else if (hasPeriodData(weeks, { kind: "month", month: thisMonth }) || !latestWithData) month = thisMonth;
+  else month = latestWithData < thisMonth ? latestWithData : thisMonth;
+
+  const budgets = await getCampaignBudgets(month);
   const budget = budgets.get(id) ?? null;
   const current = periodSummary(weeks, { kind: "month", month });
 
   return {
     campaign,
     month,
+    firstMonth,
+    lastMonth,
     weeks,
     budget,
     remaining: remainingBudget(budget, current.spend),

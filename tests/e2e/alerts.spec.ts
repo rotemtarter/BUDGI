@@ -72,7 +72,7 @@ test.afterAll(async () => {
 
 function visible(page: Page) {
   return {
-    heading: (name: string) => page.getByRole("heading", { name }).filter({ visible: true }),
+    heading: (name: string) => page.getByRole("heading", { name, exact: true }).filter({ visible: true }),
     button: (name: string) => page.getByRole("button", { name, exact: true }).filter({ visible: true }),
     text: (text: string | RegExp) => page.getByText(text).filter({ visible: true }),
   };

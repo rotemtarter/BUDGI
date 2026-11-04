@@ -11,7 +11,7 @@ test.describe.configure({ mode: "serial" });
 const NAME = "Flow Campaign";
 
 const v = (page: Page) => ({
-  heading: (name: string | RegExp) => page.getByRole("heading", { name }).filter({ visible: true }),
+  heading: (name: string | RegExp) => page.getByRole("heading", { name, exact: typeof name === "string" }).filter({ visible: true }),
   button: (name: string) => page.getByRole("button", { name, exact: true }).filter({ visible: true }),
   text: (text: string | RegExp, options?: { exact?: boolean }) => page.getByText(text, options).filter({ visible: true }),
 });

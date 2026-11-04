@@ -15,13 +15,14 @@ import {
   lastDayOfMonth,
   percentChange,
   periodSummary,
+  rangeTotal,
   remainingBudget,
   weeklySeries,
   type PeriodSummary,
   type WeekPoint,
   type WeekRow,
 } from "./metrics";
-import { forecastSeries, monthForecast, type ForecastPoint, type MonthForecast } from "./forecast";
+import { coveredDays, daysInMonth, forecastSeries, monthForecast, type ForecastPoint, type MonthForecast } from "./forecast";
 import type { MonthGoals } from "@/server/repositories/goals";
 
 // Data for the home, metrics and budget screens (DESIGN.md 1.3, 1.6, 1.7).
@@ -63,7 +64,10 @@ export type HomeData = {
   spend: number | null;
   spendChange: number | null;
   // Month view only (budgets are monthly, ADR-9)
-  budget: { remaining: number | null; change: number | null } | null;
+  budget: { planned: number | null; spend: number | null; remaining: number | null; change: number | null } | null;
+  // The current month before its end: the changes compare with the same days
+  // of the previous month (1 to this number, ADR-20); otherwise null
+  sameDays: number | null;
   // Month view only: each goal set for the month, in a fixed order
   goals: HomeGoal[] | null;
   // The current month only (DESIGN.md 1.3)
@@ -115,6 +119,21 @@ export async function getHomeData(period: Period): Promise<HomeData> {
   const current = periodSummary(rows, period);
   const previous = periodSummary(rows, before);
 
+  // An unfinished current month is compared with the same days of the
+  // previous month, not with all of it (ADR-20)
+  let sameDays: number | null = null;
+  let revenueBefore = previous.revenue;
+  let spendBefore = previous.spend;
+  if (period.kind === "month" && before.kind === "month" && period.month === currentMonth()) {
+    const days = coveredDays(rows, period.month);
+    if (days > 0 && days < daysInMonth(period.month)) {
+      sameDays = Math.min(days, daysInMonth(before.month));
+      const to = addDays(before.month, sameDays - 1);
+      revenueBefore = rangeTotal(rows, before.month, to, "revenue");
+      spendBefore = rangeTotal(rows, before.month, to, "spend");
+    }
+  }
+
   let budget: HomeData["budget"] = null;
   let goals: HomeData["goals"] = null;
   let forecast: HomeData["forecast"] = null;
@@ -129,7 +148,13 @@ export async function getHomeData(period: Period): Promise<HomeData> {
     const remainingBefore = remainingBudget(plannedBefore, previous.spend);
     // A percent change of a negative remaining budget has no clear meaning
     const comparable = remaining !== null && remaining >= 0 && remainingBefore !== null && remainingBefore > 0;
-    budget = { remaining, change: comparable ? percentChange(remaining, remainingBefore) : null };
+    budget = {
+      planned,
+      spend: current.spend,
+      remaining,
+      // The remaining budget of a month not yet over has no fair comparison
+      change: comparable && sameDays === null ? percentChange(remaining, remainingBefore) : null,
+    };
     goals = homeGoals(monthGoals, current);
     forecast = forecastData && homeForecast(forecastData);
   }
@@ -137,9 +162,10 @@ export async function getHomeData(period: Period): Promise<HomeData> {
   return {
     hasData: hasPeriodData(rows, period),
     revenue: current.revenue,
-    revenueChange: percentChange(current.revenue, previous.revenue),
+    revenueChange: percentChange(current.revenue, revenueBefore),
     spend: current.spend,
-    spendChange: percentChange(current.spend, previous.spend),
+    spendChange: percentChange(current.spend, spendBefore),
+    sameDays,
     budget,
     goals,
     forecast,

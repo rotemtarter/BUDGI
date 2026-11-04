@@ -20,7 +20,7 @@ const WEEK = "25.10–31.10";
 // Pages already visited can stay in the DOM hidden, so always look at visible elements
 function visible(page: Page) {
   return {
-    heading: (name: string) => page.getByRole("heading", { name }).filter({ visible: true }),
+    heading: (name: string) => page.getByRole("heading", { name, exact: true }).filter({ visible: true }),
     button: (name: string) => page.getByRole("button", { name, exact: true }).filter({ visible: true }),
     link: (name: string | RegExp) => page.getByRole("link", { name }).filter({ visible: true }),
     text: (text: string) => page.getByText(text).filter({ visible: true }),
@@ -165,4 +165,36 @@ test("status change, filter and deleting an empty campaign", async ({ page, isMo
   await page.getByRole("alertdialog").getByRole("button", { name: "מחיקה" }).click();
   await expect(page).toHaveURL(/\/campaigns$/);
   await expect(v.text("עוד לא נוצרו קמפיינים")).toBeVisible();
+});
+
+test("campaign details open on the latest month with data, and the month can be changed (ADR-19)", async ({ page }) => {
+  await resetUserACampaigns();
+  const { signInTestUser } = await import("../support/test-users");
+  const { client, userId } = await signInTestUser("A");
+  // A full week in the month before this one
+  const now = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date());
+  const [y, m] = now.split("-").map(Number);
+  const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  const date = new Date(`${prev}-08T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+  const weekStart = date.toISOString().slice(0, 10);
+
+  const campaign = await client.from("campaigns").insert({ user_id: userId, name: "Past Month", platform: "meta_ads" }).select("id").single();
+  if (campaign.error) throw campaign.error;
+  const week = await client
+    .from("campaign_performance")
+    .insert({ user_id: userId, campaign_id: campaign.data.id, week_start: weekStart, spend: 700, leads: 14 });
+  if (week.error) throw week.error;
+
+  await page.goto(`/campaigns/${campaign.data.id}`);
+  const picker = page.getByLabel("חודש", { exact: true }).filter({ visible: true });
+  await expect(picker).toHaveValue(`${prev}-01`);
+  const cards = page.getByRole("region", { name: "מדדי החודש" }).filter({ visible: true });
+  await expect(cards.getByText("₪50")).toBeVisible(); // CPL 700 ÷ 14
+
+  // This month has no data
+  await picker.selectOption(`${now.slice(0, 7)}-01`);
+  await expect(page).toHaveURL(/\?month=/);
+  await expect(page.getByRole("region", { name: "מדדי החודש" }).filter({ visible: true }).getByText("לא זמין").first()).toBeVisible();
+  await resetUserACampaigns();
 });

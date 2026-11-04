@@ -8,6 +8,7 @@ import { RevenueSpendChart } from "@/components/charts/revenue-spend-chart";
 import { GoalsOverview } from "@/components/dashboard/goal-progress";
 import { ForecastOverview } from "@/components/dashboard/forecast-overview";
 import { RecentAlerts, RecentInsights } from "@/components/dashboard/recent-items";
+import { BudgetDonut } from "@/components/dashboard/budget-donut";
 import { NoPeriodData } from "@/components/dashboard/no-data";
 import { PeriodHeader, compareLabel } from "@/components/dashboard/period-header";
 import { formatMoney } from "@/lib/currency/format";
@@ -45,7 +46,9 @@ async function Home({ params }: { params: Parameters<typeof parsePeriod>[0] }) {
     listAlerts({ limit: RECENT }),
     listInsights({ limit: RECENT }),
   ]);
-  const compare = compareLabel(period);
+  // An unfinished month is compared with the same days of the previous one (ADR-20)
+  // The day range in a left-to-right isolate, so "1–7" is not reversed in RTL
+  const compare = data.sameDays ? `מול אותם ימים בחודש הקודם (\u20661–${data.sameDays}\u2069)` : compareLabel(period);
   const now = new Date();
 
   return (
@@ -76,8 +79,9 @@ async function Home({ params }: { params: Parameters<typeof parsePeriod>[0] }) {
                 href={`/budget?month=${period.month}`}
                 value={<RemainingAmount value={data.budget.remaining} />}
                 unavailableReason={data.budget.remaining === null ? "לא הוזנה הוצאה או לא הוגדר תקציב לחודש" : null}
-                change={data.budget.change}
+                change={data.sameDays ? undefined : data.budget.change}
                 compareLabel={compare}
+                compareValue={<BudgetDonut planned={data.budget.planned} spend={data.budget.spend} />}
               />
             ) : (
               <KpiCard

@@ -62,6 +62,23 @@ export function periodTotal(rows: WeekRow[], period: Period, field: Field): numb
   return total;
 }
 
+// Sum of one field for the days from `from` to `to`, each week by its days in
+// that range ÷ 7 (like a month, ADR-1). null when nothing was entered.
+export function rangeTotal(rows: WeekRow[], from: string, to: string, field: Field): number | null {
+  let total: number | null = null;
+  for (const row of rows) {
+    let days = 0;
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(row.week_start, i);
+      if (day >= from && day <= to) days++;
+    }
+    const value = row[field];
+    if (days === 0 || value === null) continue;
+    total = (total ?? 0) + (Number(value) * days) / 7;
+  }
+  return total;
+}
+
 export function monthTotal(rows: WeekRow[], month: string, field: Field): number | null {
   return periodTotal(rows, monthPeriod(month), field);
 }

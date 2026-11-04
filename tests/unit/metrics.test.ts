@@ -176,3 +176,18 @@ describe("weekly chart series (DESIGN.md 2.4)", () => {
     ]);
   });
 });
+
+describe("rangeTotal (ADR-20)", () => {
+  it("adds up the days of each week inside the range", async () => {
+    const { rangeTotal } = await import("@/server/services/metrics");
+    const rows = [
+      { week_start: "2026-10-04", spend: 700, leads: null, deals: null, new_customers: null, revenue: null },
+      { week_start: "2026-10-11", spend: 1400, leads: null, deals: null, new_customers: null, revenue: null },
+    ];
+    // 1–7.10: 4–7.10 of the first week (4 days × 100)
+    expect(rangeTotal(rows, "2026-10-01", "2026-10-07", "spend")).toBeCloseTo(400);
+    // 1–14.10: the whole first week and 11–14.10 of the second (4 × 200)
+    expect(rangeTotal(rows, "2026-10-01", "2026-10-14", "spend")).toBeCloseTo(1500);
+    expect(rangeTotal(rows, "2026-10-01", "2026-10-07", "revenue")).toBeNull();
+  });
+});

@@ -22,7 +22,17 @@ const TD = "px-4 py-3 type-small whitespace-nowrap";
 
 // "נתונים שבועיים" on campaign details (DESIGN.md 1.5): latest week first,
 // "—" for a field that was not entered
-export function WeeksSection({ campaignId, weeks }: { campaignId: string; weeks: CampaignWeek[] }) {
+// The campaign name is in the heading too, since the table is far below the
+// page title (at the owner's request)
+export function WeeksSection({
+  campaignId,
+  campaignName,
+  weeks,
+}: {
+  campaignId: string;
+  campaignName: string;
+  weeks: CampaignWeek[];
+}) {
   const [dialog, setDialog] = useState<{ open: boolean; date: string }>({ open: false, date: "" });
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [deleting, startDelete] = useTransition();
@@ -54,7 +64,7 @@ export function WeeksSection({ campaignId, weeks }: { campaignId: string; weeks:
     <section aria-labelledby="weeks-title" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id="weeks-title" className="type-h3">
-          נתונים שבועיים
+          נתונים שבועיים · <bdi>{campaignName}</bdi>
         </h2>
         {weeks.length > 0 && (
           <div className="flex flex-wrap gap-3">

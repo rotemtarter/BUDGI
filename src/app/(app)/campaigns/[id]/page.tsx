@@ -17,30 +17,31 @@ import { percentChange } from "@/server/services/metrics";
 import { BudgetCard } from "@/features/campaigns/budget-card";
 import { EditCampaignDialog } from "@/features/campaigns/edit-campaign-dialog";
 import { WeeksSection } from "@/features/weeks/weeks-section";
+import { MonthSelector } from "@/components/dashboard/period-selector";
 
 export const metadata: Metadata = { title: "פרטי קמפיין · Budgi" };
 
 // DESIGN.md 1.5: the main screen for entering weekly data
-export default function CampaignPage({ params }: PageProps<"/campaigns/[id]">) {
+export default function CampaignPage({ params, searchParams }: PageProps<"/campaigns/[id]">) {
   return (
     <>
       <BackLink />
       <Suspense fallback={<DetailsSkeleton />}>
-        {params.then(({ id }) => (
-          <CampaignDetails id={id} />
+        {Promise.all([params, searchParams]).then(([{ id }, { month }]) => (
+          <CampaignDetails key={String(month)} id={id} month={typeof month === "string" ? month : undefined} />
         ))}
       </Suspense>
     </>
   );
 }
 
-async function CampaignDetails({ id }: { id: string }) {
+async function CampaignDetails({ id, month: requested }: { id: string; month?: string }) {
   await requireOnboardedUser();
   if (!z.uuid().safeParse(id).success) notFound();
 
-  const details = await getCampaignDetails(id);
+  const details = await getCampaignDetails(id, requested);
   if (!details) notFound();
-  const { campaign, month, weeks, budget, remaining, current, previous } = details;
+  const { campaign, month, firstMonth, lastMonth, weeks, budget, remaining, current, previous } = details;
 
   return (
     <div className="flex flex-col gap-6">
@@ -65,7 +66,10 @@ async function CampaignDetails({ id }: { id: string }) {
         )}
       </div>
 
-      <BudgetCard campaignId={campaign.id} month={month} budget={budget} spend={current.spend} remaining={remaining} />
+      {/* The month of the budget and KPI cards (ADR-19) */}
+      <MonthSelector path={`/campaigns/${campaign.id}`} month={month} firstMonth={firstMonth} lastMonth={lastMonth} />
+
+      <BudgetCard campaignId={campaign.id} campaignName={campaign.name} month={month} budget={budget} spend={current.spend} remaining={remaining} />
 
       <section aria-label="מדדי החודש" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
@@ -101,7 +105,7 @@ async function CampaignDetails({ id }: { id: string }) {
         />
       </section>
 
-      <WeeksSection campaignId={campaign.id} weeks={weeks} />
+      <WeeksSection campaignId={campaign.id} campaignName={campaign.name} weeks={weeks} />
     </div>
   );
 }

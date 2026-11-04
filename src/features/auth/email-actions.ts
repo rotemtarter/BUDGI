@@ -55,7 +55,7 @@ export async function signUpWithEmailAction(input: unknown): Promise<AuthResult>
   if (!parsed.success) return fieldErrors(parsed.error.issues);
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: { emailRedirectTo: `${await origin()}/auth/confirm?next=/onboarding` },
@@ -64,6 +64,8 @@ export async function signUpWithEmailAction(input: unknown): Promise<AuthResult>
     console.error("signUpWithEmail failed", { code: error.code });
     return { ok: false, message: authErrorMessage(error.code) };
   }
+  // With "Confirm email" off in Supabase the user is signed in right away
+  if (data.session) redirect("/onboarding");
   return { ok: true };
 }
 

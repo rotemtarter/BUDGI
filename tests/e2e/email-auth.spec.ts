@@ -46,7 +46,7 @@ test("sign-up checks the email and the password before sending anything", async 
   await expect(page.getByText("כתובת האימייל אינה תקינה")).toBeVisible();
   await expect(page.getByText("הסיסמה צריכה להכיל לפחות 15 תווים")).toBeVisible();
 
-  await page.getByLabel("סיסמה", { exact: true }).filter({ visible: true }).fill("a-long-enough-password-1");
+  await page.getByLabel("סיסמה", { exact: true }).filter({ visible: true }).fill("A-long-enough-password-1");
   await page.getByRole("button", { name: "הרשמה", exact: true }).filter({ visible: true }).click();
   await expect(page.getByText("הסיסמאות אינן זהות")).toBeVisible();
   await page.getByRole("link", { name: "התחברות" }).click();

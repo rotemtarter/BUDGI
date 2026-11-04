@@ -5,7 +5,7 @@ import { MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, fieldA11y } from "@/components/forms/field";
-import { MIN_PASSWORD } from "@/lib/validation/auth";
+import { PASSWORD_HELP } from "@/lib/validation/auth";
 import {
   forgotPasswordAction,
   resetPasswordAction,
@@ -142,7 +142,7 @@ export function SignUpForm() {
         type="password"
         autoComplete="new-password"
         error={form.errors.password}
-        help={`לפחות ${MIN_PASSWORD} תווים`}
+        help={PASSWORD_HELP}
         input={form.field("password")}
       />
       <TextField
@@ -191,7 +191,7 @@ export function ResetPasswordForm() {
         type="password"
         autoComplete="new-password"
         error={form.errors.password}
-        help={`לפחות ${MIN_PASSWORD} תווים`}
+        help={PASSWORD_HELP}
         input={form.field("password")}
       />
       <TextField

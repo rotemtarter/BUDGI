@@ -12,10 +12,16 @@ const email = z
   .min(1, "יש להזין אימייל")
   .pipe(z.email("כתובת האימייל אינה תקינה"));
 
+// The same rules as Supabase Auth's "Password requirements" setting
+// (lowercase, uppercase and digits), so the form explains them first
+export const PASSWORD_HELP = `לפחות ${MIN_PASSWORD} תווים, עם אות קטנה, אות גדולה (באנגלית) וספרה`;
 const newPassword = z
   .string()
   .min(MIN_PASSWORD, `הסיסמה צריכה להכיל לפחות ${MIN_PASSWORD} תווים`)
-  .max(MAX_PASSWORD, `הסיסמה ארוכה מדי (עד ${MAX_PASSWORD} תווים)`);
+  .max(MAX_PASSWORD, `הסיסמה ארוכה מדי (עד ${MAX_PASSWORD} תווים)`)
+  .refine((v) => /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v), {
+    message: "הסיסמה צריכה לכלול אות קטנה, אות גדולה (באנגלית) וספרה",
+  });
 
 export const signInSchema = z.object({
   email,

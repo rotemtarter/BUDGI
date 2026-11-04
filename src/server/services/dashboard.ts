@@ -64,9 +64,50 @@ export type HomeData = {
   spendChange: number | null;
   // Month view only (budgets are monthly, ADR-9)
   budget: { remaining: number | null; change: number | null } | null;
-  revenueGoal: { actual: number | null; target: number | null; progress: number | null } | null;
+  // Month view only: each goal set for the month, in a fixed order
+  goals: HomeGoal[] | null;
+  // The current month only (DESIGN.md 1.3)
+  forecast: HomeForecast | null;
   chart: WeekPoint[];
 };
+
+export type HomeGoal = { goal: keyof MonthGoals; actual: number | null; target: number; progress: number | null };
+
+export type HomeForecast = {
+  enough: boolean;
+  spend: number | null;
+  budget: number | null;
+  revenue: number | null;
+  revenueGoal: number | null;
+  revenueProgress: number | null;
+};
+
+const GOAL_ORDER = ["revenue", "deals", "leads", "min_roas"] as const;
+
+function homeGoals(goals: MonthGoals, current: PeriodSummary): HomeGoal[] {
+  const actual: Record<keyof MonthGoals, number | null> = {
+    revenue: current.revenue,
+    deals: current.deals,
+    leads: current.leads,
+    min_roas: current.roas.value,
+  };
+  return GOAL_ORDER.flatMap((goal) => {
+    const target = goals[goal];
+    if (target === null) return [];
+    return [{ goal, actual: actual[goal], target, progress: goalProgress(actual[goal], target) }];
+  });
+}
+
+function homeForecast(data: ForecastData): HomeForecast {
+  return {
+    enough: data.forecast.enough,
+    spend: data.forecast.spend.forecast,
+    budget: data.budget,
+    revenue: data.forecast.revenue.forecast,
+    revenueGoal: data.goals.revenue,
+    revenueProgress: data.progress.revenue.progress,
+  };
+}
 
 export async function getHomeData(period: Period): Promise<HomeData> {
   const before = previousPeriod(period);
@@ -75,23 +116,22 @@ export async function getHomeData(period: Period): Promise<HomeData> {
   const previous = periodSummary(rows, before);
 
   let budget: HomeData["budget"] = null;
-  let revenueGoal: HomeData["revenueGoal"] = null;
+  let goals: HomeData["goals"] = null;
+  let forecast: HomeData["forecast"] = null;
   if (period.kind === "month" && before.kind === "month") {
-    const [planned, plannedBefore, goals] = await Promise.all([
+    const [planned, plannedBefore, monthGoals, forecastData] = await Promise.all([
       getMonthBudget(period.month),
       getMonthBudget(before.month),
       getGoalsForMonth(period.month),
+      period.month === currentMonth() ? getForecastData(period.month) : null,
     ]);
     const remaining = remainingBudget(planned, current.spend);
     const remainingBefore = remainingBudget(plannedBefore, previous.spend);
     // A percent change of a negative remaining budget has no clear meaning
     const comparable = remaining !== null && remaining >= 0 && remainingBefore !== null && remainingBefore > 0;
     budget = { remaining, change: comparable ? percentChange(remaining, remainingBefore) : null };
-    revenueGoal = {
-      actual: current.revenue,
-      target: goals.revenue,
-      progress: goalProgress(current.revenue, goals.revenue),
-    };
+    goals = homeGoals(monthGoals, current);
+    forecast = forecastData && homeForecast(forecastData);
   }
 
   return {
@@ -101,7 +141,8 @@ export async function getHomeData(period: Period): Promise<HomeData> {
     spend: current.spend,
     spendChange: percentChange(current.spend, previous.spend),
     budget,
-    revenueGoal,
+    goals,
+    forecast,
     chart: weeklySeries(rows, chartWeeks(period)),
   };
 }

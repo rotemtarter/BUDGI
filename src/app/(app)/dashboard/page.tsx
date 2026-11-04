@@ -5,13 +5,20 @@ import { PageHeader } from "@/components/common/page-header";
 import { KpiCard } from "@/components/common/kpi-card";
 import { Amount } from "@/components/common/amount";
 import { RevenueSpendChart } from "@/components/charts/revenue-spend-chart";
-import { GoalProgress } from "@/components/dashboard/goal-progress";
+import { GoalsOverview } from "@/components/dashboard/goal-progress";
+import { ForecastOverview } from "@/components/dashboard/forecast-overview";
+import { RecentAlerts, RecentInsights } from "@/components/dashboard/recent-items";
 import { NoPeriodData } from "@/components/dashboard/no-data";
 import { PeriodHeader, compareLabel } from "@/components/dashboard/period-header";
 import { formatMoney } from "@/lib/currency/format";
 import { parsePeriod } from "@/lib/dates/period";
 import { requireOnboardedUser } from "@/server/auth/session";
 import { getHomeData } from "@/server/services/dashboard";
+import { listAlerts } from "@/server/repositories/alerts";
+import { listInsights } from "@/server/repositories/advisor-insights";
+
+// How many alerts and saved insights the home screen shows
+const RECENT = 3;
 
 export const metadata: Metadata = { title: "סקירה כללית · Budgi" };
 
@@ -33,8 +40,13 @@ export default function DashboardPage({ searchParams }: PageProps<"/dashboard">)
 async function Home({ params }: { params: Parameters<typeof parsePeriod>[0] }) {
   await requireOnboardedUser();
   const period = parsePeriod(params);
-  const data = await getHomeData(period);
+  const [data, alerts, insights] = await Promise.all([
+    getHomeData(period),
+    listAlerts({ limit: RECENT }),
+    listInsights({ limit: RECENT }),
+  ]);
   const compare = compareLabel(period);
+  const now = new Date();
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,10 +88,20 @@ async function Home({ params }: { params: Parameters<typeof parsePeriod>[0] }) {
               />
             )}
           </section>
-          {data.revenueGoal && <GoalProgress {...data.revenueGoal} />}
+          {data.goals && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <GoalsOverview goals={data.goals} />
+              {data.forecast && <ForecastOverview forecast={data.forecast} />}
+            </div>
+          )}
           <RevenueSpendChart title="הכנסות מול הוצאות" data={data.chart} variant="line" />
         </>
       )}
+      {/* Shown for every period, also without data (DESIGN.md 1.3) */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RecentAlerts alerts={alerts} now={now} />
+        <RecentInsights insights={insights} />
+      </div>
     </div>
   );
 }
@@ -105,7 +127,10 @@ function HomeSkeleton() {
           <Skeleton key={i} className="h-32 rounded-xl" />
         ))}
       </div>
-      <Skeleton className="h-20 w-full rounded-xl" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+      </div>
       <Skeleton className="h-80 w-full rounded-xl" />
     </div>
   );

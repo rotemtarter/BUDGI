@@ -92,10 +92,12 @@ function toAlert(row: AlertRow): StoredAlert {
 }
 
 // Alert center (DESIGN.md 1.9), newest first
-export async function listAlerts({ unreadOnly = false }: { unreadOnly?: boolean } = {}): Promise<StoredAlert[]> {
+// `limit`: only the newest ones (the home screen, DESIGN.md 1.3)
+export async function listAlerts({ unreadOnly = false, limit }: { unreadOnly?: boolean; limit?: number } = {}): Promise<StoredAlert[]> {
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("alerts").select(COLUMNS).order("created_at", { ascending: false });
   if (unreadOnly) query = query.is("read_at", null);
+  if (limit) query = query.limit(limit);
   const { data, error } = await query;
   if (error) throw error;
   return data.map(toAlert);

@@ -6,12 +6,15 @@ import { advisorReplySchema, type AdvisorReply, type SavedInsight } from "@/lib/
 // query to the signed-in user.
 
 // Newest first. A stored reply that no longer matches the schema is skipped.
-export async function listInsights(): Promise<SavedInsight[]> {
+// `limit`: only the newest ones (the home screen, DESIGN.md 1.3)
+export async function listInsights({ limit }: { limit?: number } = {}): Promise<SavedInsight[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("advisor_insights")
     .select("id, question, reply, created_at")
     .order("created_at", { ascending: false });
+  if (limit) query = query.limit(limit);
+  const { data, error } = await query;
   if (error) throw error;
   return data.flatMap((row) => {
     const reply = advisorReplySchema.safeParse(row.reply);

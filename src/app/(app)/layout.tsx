@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Logo } from "@/components/brand/logo";
+import { DecorativeBackground } from "@/components/brand/decorative-background";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/shell/app-header";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
@@ -18,7 +19,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         </div>
         <SidebarNav />
       </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative isolate flex min-w-0 flex-1 flex-col">
+        {/* The light waves and nodes of the login screen, fixed behind the
+            content area (not the sidebar), at the owner's request */}
+        <DecorativeBackground placement="fixed inset-y-0 start-0 end-0 md:start-60" />
         <AppHeader />
         <main id="main" tabIndex={-1} className="outline-none mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 md:px-8 md:py-8">
           <Suspense fallback={<PageSkeleton />}>

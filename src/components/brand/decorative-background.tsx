@@ -1,8 +1,10 @@
-// Soft waves and node network from the Style Guide, for the login and
-// onboarding screens only (DESIGN.md 2.4). Purely decorative.
-export function DecorativeBackground() {
+import { cn } from "@/lib/utils";
+
+// Soft waves and node network from the Style Guide (DESIGN.md 2.4). Purely
+// decorative. `placement` positions it; by default it fills its positioned parent.
+export function DecorativeBackground({ placement = "absolute inset-0" }: { placement?: string }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className={cn("pointer-events-none -z-10 overflow-hidden", placement)}>
       <svg
         className="absolute bottom-0 left-0 h-64 w-full opacity-40"
         viewBox="0 0 1440 320"

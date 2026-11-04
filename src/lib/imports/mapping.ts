@@ -27,9 +27,11 @@ function normalizeHeader(header: string): string {
 const HEADER_NAMES: Record<(typeof IMPORT_FIELDS)[number]["key"], string[]> = {
   name: ["campaign", "campaign name", "campaigns", "ad name", "ad set name", "קמפיין", "שם הקמפיין"],
   platform: ["platform", "channel", "network", "פלטפורמה", "ערוץ"],
-  // Week columns only: a daily "date" column would put several rows in one
-  // week, so dates are left to choose
-  week: ["week", "week start", "week starting", "week of", "reporting starts", "שבוע", "תחילת השבוע"],
+  // A week or a date: daily rows are added up into their week (ADR-18)
+  week: [
+    "week", "week start", "week starting", "week of", "reporting starts", "date", "day", "reporting date",
+    "שבוע", "תחילת השבוע", "תאריך", "יום",
+  ],
   spend: ["spend", "amount spent", "cost", "costs", "total spend", "ad spend", "הוצאות", "עלות", "סכום שהוצא"],
   leads: ["leads", "lead", "ליד"],
   deals: ["deals", "deal", "sales", "purchases", "conversions", "orders", "מכירות", "המרות", "עסקה"],

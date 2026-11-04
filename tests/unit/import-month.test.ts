@@ -52,34 +52,24 @@ describe("full month", () => {
     expect(weeks[4].spend).toBe(700); // Nov 29–30, at the same pace for the whole week
   });
 
-  it("splits every file row into the month's weeks", () => {
+  it("splits each campaign's total into the month's weeks", () => {
     const table = {
       headers: ["name", "spend", "leads"],
       rows: [
         { line: 2, cells: ["Search", 3000, 30] },
         { line: 3, cells: ["Brand", 600, null] },
+        // Daily rows of the same campaign are added up first
+        { line: 4, cells: ["search ", 1500, 0] },
       ],
     };
     const mapping = { ...emptyMapping(), name: 0, platform: "google_ads" as const, spend: 1, leads: 2, period: NOV };
-    const { valid, errors } = validateRows(table, mapping);
+    const { valid, errors, combinedRows } = validateRows(table, mapping);
     expect(errors).toEqual([]);
     expect(valid).toHaveLength(10);
-    expect(valid.filter((r) => r.line === 2).map((r) => r.weekStart)).toEqual(monthWeeks(NOV));
+    expect(combinedRows).toBe(1);
+    const search = valid.filter((r) => r.line === 2);
+    expect(search.map((r) => r.weekStart)).toEqual(monthWeeks(NOV));
+    expect(search[0].spend).toBe(1050); // 4,500 ÷ 30 × 7
     expect(valid.filter((r) => r.line === 3).every((r) => r.leads === null)).toBe(true);
-  });
-
-  it("reports a campaign twice in a month file once per line", () => {
-    const table = {
-      headers: ["name", "spend"],
-      rows: [
-        { line: 2, cells: ["Search", 100] },
-        { line: 3, cells: ["search ", 200] },
-      ],
-    };
-    const mapping = { ...emptyMapping(), name: 0, platform: "google_ads" as const, spend: 1, period: NOV };
-    const { valid, errors } = validateRows(table, mapping);
-    expect(valid).toEqual([]);
-    expect(errors.map((e) => e.line)).toEqual([2, 3]);
-    expect(errors[0].reasons[0]).toContain("שורה 3");
   });
 });

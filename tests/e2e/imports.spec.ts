@@ -231,8 +231,8 @@ test("rows with errors are listed with their line and reason and are not saved",
   await resetUserACampaigns();
   await upload(page, `${FIXTURES}/errors.csv`);
   await expect(visible(page).heading("בדיקה")).toBeVisible();
-  expect(await summary(page, "שורות חדשות")).toBe("1");
-  expect(await summary(page, "שורות עם שגיאות")).toBe("8");
+  expect(await summary(page, "שורות חדשות")).toBe("2");
+  expect(await summary(page, "שורות עם שגיאות")).toBe("6");
 
   const errors = page.getByRole("table").filter({ visible: true });
   const reasonOf = (line: number) => errors.getByRole("row").filter({ has: page.getByRole("cell", { name: String(line), exact: true }) });
@@ -242,12 +242,13 @@ test("rows with errors are listed with their line and reason and are not saved",
   await expect(reasonOf(6)).toContainText("הוצאה: יש להזין מספר שאינו שלילי");
   await expect(reasonOf(7)).toContainText("לידים: יש להזין מספר שלם");
   await expect(reasonOf(8)).toContainText("אין בשורה אף ערך מספרי");
-  await expect(reasonOf(9)).toContainText("כפולה");
-  await expect(reasonOf(10)).toContainText("גם בשורה 9");
+  // Lines 9 and 10: the same campaign and week, added up (ADR-18)
+  await expect(reasonOf(9)).toHaveCount(0);
+  await expect(visible(page).text(/חוברו/)).toBeVisible();
 
-  await visible(page).button("ייבוא שורה אחת").click();
-  await expect(visible(page).text("8 שורות עם שגיאות לא נשמרו")).toBeVisible();
-  expect(await campaignNames()).toEqual(["Import Delta"]);
+  await visible(page).button("ייבוא 2 שורות").click();
+  await expect(visible(page).text("6 שורות עם שגיאות לא נשמרו")).toBeVisible();
+  expect(await campaignNames()).toEqual(["Import Delta", "Import Epsilon"]);
 });
 
 test("dates that are not a Sunday are moved to their week", async ({ page }) => {
@@ -290,7 +291,7 @@ test("a full month is split into the month's weeks by days (ADR-16)", async ({ p
   await expect(visible(page).text("אוקטובר 2026, מחולק ל-5 שבועות")).toBeVisible();
   await visible(page).button("המשך").click();
 
-  await expect(visible(page).text(/כל שורה בקובץ חולקה ל-5 שבועות/)).toBeVisible();
+  await expect(visible(page).text(/חולקו ל-5 שבועות של החודש/)).toBeVisible();
   expect(await summary(page, "שורות חדשות")).toBe("10");
   await visible(page).button("ייבוא 10 שורות").click();
   await expect(visible(page).text("נוצרו 2 קמפיינים חדשים")).toBeVisible();
@@ -331,4 +332,34 @@ test("a full month into one campaign is split into its weeks", async ({ page }) 
   expect(weeks).toEqual(
     ["2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"].map((week_start) => ({ week_start, spend: 429.45 })),
   );
+});
+
+test("a daily export of a whole month is recognized and added up into weeks (ADR-18)", async ({ page }) => {
+  await resetUserACampaigns();
+  await upload(page, `${FIXTURES}/daily-month.csv`);
+  // Date, Platform and Campaign are recognized: no column choices at all
+  await expect(visible(page).heading("בדיקה")).toBeVisible();
+  await expect(visible(page).text("העמודות זוהו אוטומטית")).toBeVisible();
+  await expect(visible(page).text(/הקובץ מכיל נתונים יומיים/)).toBeVisible();
+  expect(await summary(page, "שורות חדשות")).toBe("10");
+  expect(await summary(page, "שורות עם שגיאות")).toBe("0");
+  await visible(page).button("ייבוא 10 שורות").click();
+  await expect(visible(page).text("נוצרו 2 קמפיינים חדשים")).toBeVisible();
+
+  // November's totals equal the file: 30 × (100 + 50) spend, 30 × 300 revenue
+  await page.goto("/dashboard?period=month&value=2026-11");
+  const cards = page.getByRole("region", { name: "נתוני התקופה" }).filter({ visible: true });
+  await expect(cards.getByText("₪4,500")).toBeVisible();
+  await expect(cards.getByText("₪9,000")).toBeVisible();
+});
+
+test("the platform list has the four platforms, and a recognized platform column", async ({ page }) => {
+  await upload(page, `${FIXTURES}/meta-export.csv`);
+  await page.getByRole("combobox", { name: /^פלטפורמה/ }).filter({ visible: true }).click();
+  await expect(page.getByRole("option")).toHaveText([
+    "Meta Ads – לכל השורות",
+    "Google Ads – לכל השורות",
+    "TikTok Ads – לכל השורות",
+    "LinkedIn Ads – לכל השורות",
+  ]);
 });

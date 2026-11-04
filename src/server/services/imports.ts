@@ -68,7 +68,7 @@ export async function previewImport(file: UploadedFile, mappingInput?: unknown):
     mapping = resolveMapping(table, mappingInput);
   }
 
-  const { errors, adjusted, plan } = await planImport(table, mapping);
+  const { errors, adjusted, combinedRows, daily, plan } = await planImport(table, mapping);
   return {
     ok: true,
     stage: "review",
@@ -82,6 +82,8 @@ export async function previewImport(file: UploadedFile, mappingInput?: unknown):
       errors,
       adjusted,
       monthWeeks: mapping.period && isFullMonth(mapping.period) ? monthWeeks(mapping.period).length : null,
+      combinedRows,
+      daily,
     },
   };
 }

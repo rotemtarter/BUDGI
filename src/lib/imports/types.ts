@@ -22,6 +22,9 @@ export type PreviewSummary = {
   adjusted: AdjustedDate[];
   // A full month as the period: how many weeks each row was split into (ADR-16)
   monthWeeks: number | null;
+  // File rows added up with others of the same campaign and week (ADR-18)
+  combinedRows: number;
+  daily: boolean;
 };
 
 // Import into one campaign: the file's rows added up into one week, or for a

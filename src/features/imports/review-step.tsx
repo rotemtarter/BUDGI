@@ -46,10 +46,18 @@ export function ReviewStep({
         </p>
       )}
 
-      {summary.monthWeeks !== null && (
+      {summary.monthWeeks !== null ? (
         <p role="status" className="type-body">
-          כל שורה בקובץ חולקה ל-{summary.monthWeeks} שבועות של החודש לפי מספר הימים בכל שבוע. הספירה למטה היא של שורות שבוע.
+          הנתונים של כל קמפיין חולקו ל-{summary.monthWeeks} שבועות של החודש לפי מספר הימים בכל שבוע (הערכה). הספירה למטה היא של שורות שבוע.
         </p>
+      ) : (
+        summary.combinedRows > 0 && (
+          <p role="status" className="type-body">
+            {summary.daily
+              ? "הקובץ מכיל נתונים יומיים: הימים של כל קמפיין חוברו לשבועות (ראשון–שבת). הספירה למטה היא של שורות שבוע."
+              : "שורות של אותו קמפיין ואותו שבוע חוברו לשורת שבוע אחת. הספירה למטה היא של שורות שבוע."}
+          </p>
+        )
       )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

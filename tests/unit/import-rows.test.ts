@@ -36,10 +36,12 @@ describe("suggestMapping", () => {
     const { mapping, auto } = suggestMapping(headers);
     expect(auto).toBe(false);
     expect(mapping).toMatchObject({
-      name: 0, spend: 1, leads: 2, new_customers: 3, revenue: 4,
-      // No deals column: not guessed from another one. A daily date is not a week.
-      deals: null, platform: null, week: null,
+      name: 0, spend: 1, leads: 2, new_customers: 3, revenue: 4, week: 5,
+      // No deals column: not guessed from another one
+      deals: null, platform: null,
     });
+    // With a platform column too, the import needs no mapping at all
+    expect(suggestMapping(["Date", "Platform", "Campaign", "Spend_ILS"]).auto).toBe(true);
     expect(suggestMapping(["Ad name", "Amount spent (ILS)", "Reporting starts"]).mapping).toMatchObject({
       name: 0, spend: 1, week: 2,
     });
@@ -149,23 +151,37 @@ describe("validateRows", () => {
     ]);
   });
 
-  it("marks every row of the same campaign and week as duplicates", () => {
-    const { valid, errors, adjusted } = validateRows(
+  it("adds up rows of the same campaign and week (ADR-18)", () => {
+    const { valid, errors, adjusted, combinedRows, daily } = validateRows(
       table([
-        ["Alpha", "Meta Ads", "26/10/2026", "100", "", "", "", ""],
+        ["Alpha", "Meta Ads", "26/10/2026", "100.10", "2", "", "", ""],
         ["Beta", "Meta Ads", "26/10/2026", "100", "", "", "", ""],
-        [" alpha", "Instagram", "31/10/2026", "200", "", "", "", ""],
+        [" alpha", "Instagram", "31/10/2026", "200.25", "", "", "", ""],
         ["Alpha", "Google Ads", "26/10/2026", "100", "", "", "", ""],
       ]),
       SAMPLE_MAPPING,
     );
-    expect(valid.map((r) => r.line)).toEqual([3, 5]);
-    expect(errors).toEqual([
-      { line: 2, reasons: ["כפולה: אותו קמפיין ואותו שבוע מופיעים גם בשורה 4"] },
-      { line: 4, reasons: ["כפולה: אותו קמפיין ואותו שבוע מופיעים גם בשורה 2"] },
+    expect(errors).toEqual([]);
+    expect(valid).toHaveLength(3);
+    expect(valid[0]).toMatchObject({ line: 2, name: "Alpha", weekStart: "2026-10-25", spend: 300.35, leads: 2 });
+    expect(combinedRows).toBe(1);
+    // Two dates in one week: daily rows, so moved dates are not listed
+    expect(daily).toBe(true);
+    expect(adjusted).toEqual([]);
+  });
+
+  it("turns daily rows into weeks, scaling a week partly outside the file's dates", () => {
+    // 1–30.11.2026, 10 a day; the week 29.11–5.12 has only 2 days in the file
+    const rows = Array.from({ length: 30 }, (_, i) => ["Daily", "Meta Ads", `2026-11-${String(i + 1).padStart(2, "0")}`, "10", "1", "", "", ""]);
+    const { valid, combinedRows } = validateRows(table(rows), SAMPLE_MAPPING);
+    expect(valid.map((r) => [r.weekStart, r.spend, r.leads])).toEqual([
+      ["2026-11-01", 70, 7],
+      ["2026-11-08", 70, 7],
+      ["2026-11-15", 70, 7],
+      ["2026-11-22", 70, 7],
+      ["2026-11-29", 70, 7], // 20 for 2 days, as a whole week at that pace
     ]);
-    // Adjusted dates are listed only for rows that will be saved
-    expect(adjusted.map((a) => a.line)).toEqual([3, 5]);
+    expect(combinedRows).toBe(25);
   });
 
   it("uses one platform and the dates of the whole file", () => {
@@ -178,9 +194,12 @@ describe("validateRows", () => {
       ]),
       mapping,
     );
-    expect(valid.map((r) => [r.name, r.platform, r.weekStart])).toEqual([["B", "tiktok_ads", "2026-10-25"]]);
-    // Same campaign twice in one week
-    expect(errors.map((e) => e.line)).toEqual([2, 4]);
+    // Same campaign twice in the week: added up
+    expect(valid.map((r) => [r.name, r.platform, r.weekStart, r.spend])).toEqual([
+      ["A", "tiktok_ads", "2026-10-25", 110],
+      ["B", "tiktok_ads", "2026-10-25", 50],
+    ]);
+    expect(errors).toEqual([]);
     expect(adjusted).toEqual([]);
   });
 

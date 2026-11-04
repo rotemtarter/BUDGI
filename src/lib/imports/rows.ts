@@ -1,4 +1,4 @@
-import { startOfWeek } from "@/lib/dates/week";
+import { addDays, startOfWeek } from "@/lib/dates/week";
 import type { Platform } from "@/lib/campaigns/platforms";
 import {
   FIELD_LABELS,
@@ -34,19 +34,42 @@ export type RowError = { line: number; reasons: string[] };
 export type AdjustedDate = { line: number; date: string; weekStart: string };
 
 export type ValidatedRows = {
+  // One row per campaign and week, after adding up the file's rows
   valid: ValidRow[];
   errors: RowError[];
   adjusted: AdjustedDate[];
+  // File rows that were added up with others of the same campaign and week
+  combinedRows: number;
+  // Rows with daily dates (several dates in one week)
+  daily: boolean;
 };
+
+type ParsedRow = { line: number; key: string; name: string; platform: Platform; date: string } & Record<ValueField, number | null>;
+
+function addValues(rows: Record<ValueField, number | null>[]): Record<ValueField, number | null> {
+  const total = {} as Record<ValueField, number | null>;
+  for (const field of VALUE_FIELDS) {
+    const values = rows.map((r) => r[field]).filter((v): v is number => v !== null);
+    total[field] = values.length === 0 ? null : values.reduce((a, b) => a + b, 0);
+    // Amounts in agorot, without float leftovers
+    if (total[field] !== null && !INTEGER_FIELDS.includes(field)) total[field] = Math.round(total[field] * 100) / 100;
+  }
+  return total;
+}
+
+function daysInRange(from: string, to: string): number {
+  return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1;
+}
 
 const NO_VALUE_MESSAGE = "אין בשורה אף ערך מספרי";
 
-// Checks every row against the mapping (PRD 3.4). Two rows for the same
-// campaign and week are both errors. With a full month as the period, every
-// row is split into the month's weeks (ADR-16).
+// Checks every row against the mapping (PRD 3.4). Rows of the same campaign
+// and week are added up into one week row (for example daily rows, ADR-18).
+// With a full month as the period, each campaign's total is split into the
+// month's weeks (ADR-16).
 export function validateRows(table: ImportTable, mapping: ColumnMapping): ValidatedRows {
   const cellOf = (cells: Cell[], index: number | null): Cell => (index === null ? null : (cells[index] ?? null));
-  const candidates: ValidRow[] = [];
+  const parsedRows: ParsedRow[] = [];
   const errors: RowError[] = [];
   const adjusted: AdjustedDate[] = [];
 
@@ -101,36 +124,74 @@ export function validateRows(table: ImportTable, mapping: ColumnMapping): Valida
       continue;
     }
 
-    const key = campaignKey(name, platform);
-    if (mapping.period && isFullMonth(mapping.period)) {
-      for (const week of splitMonth(mapping.period, values)) candidates.push({ line, key, name, platform, ...week });
-      continue;
-    }
-    const weekStart = startOfWeek(date);
-    if (weekStart !== date && !mapping.period) adjusted.push({ line, date, weekStart });
-    candidates.push({ line, key, name, platform, weekStart, ...values });
+    parsedRows.push({ line, key: campaignKey(name, platform), name, platform, date, ...values });
   }
-
-  // Same campaign and week twice in the file: every row involved is an error
-  const byWeek = new Map<string, ValidRow[]>();
-  for (const row of candidates) {
-    const id = `${row.key}|${row.weekStart}`;
-    byWeek.set(id, [...(byWeek.get(id) ?? []), row]);
-  }
-  const valid: ValidRow[] = [];
-  for (const row of candidates) {
-    const group = byWeek.get(`${row.key}|${row.weekStart}`)!;
-    if (group.length === 1) {
-      valid.push(row);
-      continue;
-    }
-    // A month row is split into several weeks: report each line once
-    if (errors.some((e) => e.line === row.line)) continue;
-    const others = [...new Set(group.filter((r) => r.line !== row.line).map((r) => r.line))];
-    errors.push({ line: row.line, reasons: [`כפולה: אותו קמפיין ואותו שבוע מופיעים גם בשורה ${others.join(", ")}`] });
-  }
-
   errors.sort((a, b) => a.line - b.line);
-  const validLines = new Set(valid.map((r) => r.line));
-  return { valid, errors, adjusted: adjusted.filter((a) => validLines.has(a.line)) };
+
+  // A full month: each campaign's total split into the month's weeks
+  if (mapping.period && isFullMonth(mapping.period)) {
+    const byCampaign = groupBy(parsedRows, (row) => row.key);
+    const valid = [...byCampaign.values()].flatMap((rows) =>
+      splitMonth(mapping.period!, addValues(rows)).map((week) => ({
+        line: rows[0].line,
+        key: rows[0].key,
+        name: rows[0].name,
+        platform: rows[0].platform,
+        ...week,
+      })),
+    );
+    return { valid, errors, adjusted: [], combinedRows: parsedRows.length - byCampaign.size, daily: false };
+  }
+
+  // Rows of the same campaign and week are added up
+  const byWeek = groupBy(parsedRows, (row) => `${row.key}|${startOfWeek(row.date)}`);
+  // Daily rows: a campaign has several dates in one week
+  const daily = [...byWeek.values()].some((rows) => new Set(rows.map((r) => r.date)).size > 1);
+
+  // Daily rows of whole months (from a 1st to a month's last day): the first
+  // and last week have days outside the file. Such a week holds a whole week
+  // at the pace of its days in the file, like a split month (ADR-16), so each
+  // month's total equals the file's.
+  const dates = parsedRows.map((r) => r.date).sort();
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  const wholeMonths = daily && first.endsWith("-01") && addDays(last, 1).endsWith("-01");
+  const scaleOf = (weekStart: string) => {
+    if (!wholeMonths) return 1;
+    const from = weekStart < first ? first : weekStart;
+    const to = addDays(weekStart, 6) > last ? last : addDays(weekStart, 6);
+    return 7 / daysInRange(from, to);
+  };
+
+  const valid: ValidRow[] = [...byWeek.values()].map((rows) => {
+    const weekStart = startOfWeek(rows[0].date);
+    const values = addValues(rows);
+    const scale = scaleOf(weekStart);
+    if (scale !== 1) {
+      for (const field of VALUE_FIELDS) {
+        const value = values[field];
+        if (value === null) continue;
+        values[field] = INTEGER_FIELDS.includes(field) ? Math.round(value * scale) : Math.round(value * scale * 100) / 100;
+      }
+    }
+    return { line: rows[0].line, key: rows[0].key, name: rows[0].name, platform: rows[0].platform, weekStart, ...values };
+  });
+
+  // Dates moved to their Sunday; not listed for daily rows, where it is expected
+  if (!daily) {
+    for (const row of parsedRows) {
+      const weekStart = startOfWeek(row.date);
+      if (weekStart !== row.date && !mapping.period) adjusted.push({ line: row.line, date: row.date, weekStart });
+    }
+  }
+  return { valid, errors, adjusted, combinedRows: parsedRows.length - valid.length, daily };
+}
+
+function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyOf(item);
+    groups.set(key, [...(groups.get(key) ?? []), item]);
+  }
+  return groups;
 }

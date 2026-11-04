@@ -76,13 +76,18 @@ export function MappingStep({
   pending: boolean;
 }) {
   const columnChoices: Choice<string>[] = columns.headers.map((header, index) => ({ value: String(index), label: header }));
+  const platformColumn = typeof columns.mapping.platform === "number" ? columns.mapping.platform : null;
+  // The four platforms; a file column only when it was recognized as the
+  // platform column (a file with several platforms), at the owner's request
   const platformChoices: Choice<string>[] = [
     ...PLATFORMS.map((platform) => ({
       value: platform,
       label: `${PLATFORM_LABELS[platform]} – לכל השורות`,
       icon: <PlatformLogo platform={platform} decorative />,
     })),
-    ...columns.headers.map((header, index) => ({ value: String(index), label: `עמודה בקובץ: ${header}` })),
+    ...(platformColumn === null
+      ? []
+      : [{ value: String(platformColumn), label: `לפי העמודה בקובץ: ${columns.headers[platformColumn]}` }]),
   ];
   const sampleOf = (index: number | null) => (index === null ? "" : columns.samples[index]) || "—";
   const missing = forCampaign ? missingCampaignMapping(mapping) : missingMapping(mapping);

@@ -2,7 +2,19 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 // Pages that work without signing in
-const PUBLIC_PATHS = ["/login", "/terms", "/privacy", "/auth/callback", "/auth/signout"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/terms",
+  "/privacy",
+  "/auth/callback",
+  "/auth/confirm",
+  "/auth/signout",
+];
+
+// Screens for signed-out users; a signed-in user goes home instead
+const SIGNED_OUT_ONLY = ["/", "/login", "/signup", "/forgot-password"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -14,7 +26,7 @@ export async function proxy(request: NextRequest) {
 
   let target: string | null = null;
   if (!userId && !isPublic(pathname)) target = "/login";
-  else if (userId && (pathname === "/" || pathname === "/login")) target = "/dashboard";
+  else if (userId && SIGNED_OUT_ONLY.includes(pathname)) target = "/dashboard";
 
   if (!target) return response;
 

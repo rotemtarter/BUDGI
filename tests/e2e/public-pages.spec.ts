@@ -10,9 +10,12 @@ test("login screen: Hebrew RTL, Google button and legal links", async ({ page })
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("img", { name: "Budgi" })).toBeVisible();
   await expect(page.getByRole("button", { name: "התחברות עם Google" })).toBeVisible();
-  await expect(page.getByText("אין לך חשבון? הוא ייווצר אוטומטית בהתחברות הראשונה.")).toBeVisible();
-  // No email/password sign-in in the UI
-  await expect(page.locator("input")).toHaveCount(0);
+  await expect(page.getByText("עם Google, החשבון נוצר אוטומטית בהתחברות הראשונה.")).toBeVisible();
+  // Email and password too (ADR-21)
+  await expect(page.getByLabel("אימייל")).toBeVisible();
+  await expect(page.getByLabel("סיסמה")).toBeVisible();
+  await expect(page.getByRole("link", { name: "הרשמה עם אימייל" })).toHaveAttribute("href", "/signup");
+  await expect(page.getByRole("link", { name: "שכחתי סיסמה" })).toHaveAttribute("href", "/forgot-password");
 
   await page.getByRole("link", { name: "תנאי שימוש" }).click();
   await expect(page).toHaveURL(/\/terms$/);
@@ -32,7 +35,7 @@ test("failed sign-in shows an error above the button", async ({ page }) => {
 });
 
 test("inner screens require signing in", async ({ page }) => {
-  for (const path of ["/dashboard", "/settings", "/onboarding", "/campaigns"]) {
+  for (const path of ["/dashboard", "/settings", "/onboarding", "/campaigns", "/reset-password"]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login$/);
   }

@@ -85,7 +85,7 @@ async function AccountCard() {
             </dd>
           </div>
         </dl>
-        <p className="mt-4 type-small text-muted-foreground">השם והאימייל מגיעים מחשבון Google שלך.</p>
+        <p className="mt-4 type-small text-muted-foreground">השם והאימייל מגיעים מחשבון ההתחברות שלך (Google או אימייל).</p>
         <div className="mt-6 border-t border-brand-light-gray pt-6">
           <BusinessNameForm businessName={user.businessName} />
         </div>

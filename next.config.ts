@@ -12,6 +12,9 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The dev server logs Server Function arguments by default, which would put
+  // passwords from the sign-in forms in the terminal (ADR-21)
+  logging: { serverFunctions: false },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },

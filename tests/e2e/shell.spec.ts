@@ -11,7 +11,7 @@ const ITEMS = [
   ["תקציב", "/budget"],
   ["מדדים", "/metrics"],
   ["תחזית", "/forecast"],
-  ["AI Advisor", "/advisor"],
+  ["AI Budget", "/advisor"],
   ["התראות", "/alerts"],
   ["ייבוא נתונים", "/imports"],
   ["הגדרות", "/settings"],
@@ -30,11 +30,11 @@ test("navigation works on desktop", async ({ page, isMobile }) => {
     await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
   }
 
-  // Screens from later milestones show "coming soon"
-  await nav.getByRole("link", { name: "AI Advisor", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "AI Budget Advisor" }).filter({ visible: true })).toBeVisible();
-  // Previously visited pages stay in the DOM (hidden), so look at the visible one
-  await expect(page.getByText("המסך הזה ייבנה בקרוב.").filter({ visible: true })).toBeVisible();
+  // Every screen is built: none shows "coming soon". Previously visited pages
+  // stay in the DOM (hidden), so look at the visible ones.
+  await nav.getByRole("link", { name: "AI Budget", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "AI Budget", exact: true }).filter({ visible: true })).toBeVisible();
+  await expect(page.getByText("המסך הזה ייבנה בקרוב.").filter({ visible: true })).toHaveCount(0);
 });
 
 test("navigation drawer works on mobile", async ({ page, isMobile }) => {

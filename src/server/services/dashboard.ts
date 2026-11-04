@@ -258,7 +258,7 @@ export async function getForecastData(month: string): Promise<ForecastData> {
   };
 }
 
-function groupByCampaign(rows: CampaignWeekRow[]): Map<string, WeekRow[]> {
+export function groupByCampaign(rows: CampaignWeekRow[]): Map<string, WeekRow[]> {
   const map = new Map<string, WeekRow[]>();
   for (const { campaignId, ...row } of rows) {
     const list = map.get(campaignId) ?? [];

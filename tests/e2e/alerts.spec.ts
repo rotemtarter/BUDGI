@@ -171,7 +171,7 @@ test("the alert center lists, filters and opens alerts", async ({ page }) => {
 
   await page.goto("/alerts?filter=unread");
   await expect(cards).toHaveCount(unreadBefore - 1);
-  await expect(page.getByRole("link", { name: "ניהול ספי התראה" })).toHaveAttribute("href", "/settings#alerts");
+  await expect(page.getByRole("link", { name: "ניהול התראות" })).toHaveAttribute("href", "/settings#alerts");
 });
 
 test("an empty alert center", async ({ page }) => {

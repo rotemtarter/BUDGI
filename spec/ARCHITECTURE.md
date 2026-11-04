@@ -409,6 +409,7 @@ tests/
 | `alert_settings` | `id`, `user_id`, `alert_type`, `threshold_config`, `enabled`, `updated_at` | `alert_type` ∈ `spend_pace`, `budget_overrun`, `performance_drop`, `goal_risk`, `goal_reached`. ערכי ברירת מחדל לפי PRD 4.6. Unique על `(user_id, alert_type)` |
 | `alerts` | `id`, `user_id`, `alert_type`, `severity`, `title`, `description`, `related_campaign_id`, `month`, `dedupe_key`, `deviation`, `created_at`, `read_at` | התראות שנוצרו ונשמרות במרכז ההתראות. `severity` ∈ `info`, `warning`, `critical` |
 | `advisor_usage` | `user_id`, `usage_date`, `question_count` | מונה שאלות יומי למגבלת 20 שאלות. מפתח ראשי `(user_id, usage_date)` |
+| `advisor_insights` | `id`, `user_id`, `question`, `reply` (JSONB), `created_at` | תשובת Advisor שהמשתמש בחר לשמור (PRD 4.7): השאלה והתשובה כפי שהוצגו ברגע השמירה. `reply` נבדק ב-Zod בשמירה ובקריאה |
 | `import_jobs` | `id`, `user_id`, `file_name`, `status`, `rows_total`, `rows_imported`, `rows_rejected`, `campaigns_created`, `error_summary`, `created_at`, `completed_at` | תיעוד תהליך ייבוא ותוצאותיו; קובץ המקור אינו נשמר |
 
 **הערות תכנון:**
@@ -427,7 +428,7 @@ tests/
     ופלטפורמה; התאמה לשורה קיימת לפי `(campaign_id, week_start)`.
 -   `threshold_config` יישמר כ-JSONB, אך מבנה הערכים יאומת באמצעות Zod
     בצד השרת.
--   שיחות ה-Advisor אינן נשמרות ב-DB; רק מונה השאלות היומי.
+-   שיחות ה-Advisor אינן נשמרות ב-DB; רק מונה השאלות היומי ותשובות שהמשתמש בחר לשמור כתובנות (`advisor_insights`).
 
 ### 3.3 קשרים בין הישויות
 
@@ -443,6 +444,7 @@ erDiagram
     AUTH_USERS ||--o{ ALERTS : receives
     CAMPAIGNS o|--o{ ALERTS : relates
     AUTH_USERS ||--o{ ADVISOR_USAGE : counts
+    AUTH_USERS ||--o{ ADVISOR_INSIGHTS : saves
     AUTH_USERS ||--o{ IMPORT_JOBS : imports
 ```
 
@@ -500,6 +502,7 @@ erDiagram
 | `PATCH` | `/api/alerts/:id` | סימון התראה כנקראה |
 | `GET` / `PUT` | `/api/alert-settings` | קריאה ועדכון של ספי התראות |
 | `POST` | `/api/advisor` | שליחת שאלה (עם הודעות השיחה הנוכחית) וקבלת ניתוח/המלצה |
+| `POST` / `DELETE` | Server Actions של התובנות | שמירת תשובה כתובנה ומחיקת תובנה שמורה |
 | `DELETE` | `/api/account` | מחיקת החשבון וכל הנתונים |
 
 הטבלה מתארת חוזה לוגי מוצע. ניתן לממש חלק מהפעולות כ-Server Actions בלי
@@ -703,7 +706,7 @@ Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
     העסק נמחקים ב-Cascade. לאחר מכן ה-Session מתבטל.
 -   יש להימנע מלוגים המכילים תוכן פיננסי מפורט או פרטי משתמש שאינם
     נחוצים.
--   שיחות Advisor וקובצי ייבוא אינם נשמרים. `import_jobs` שומר רק סיכום
+-   שיחות Advisor וקובצי ייבוא אינם נשמרים (מלבד תובנות שהמשתמש בחר לשמור, שנמחקות יחד עם החשבון). `import_jobs` שומר רק סיכום
     מספרי ושמות קבצים.
 
 ------------------------------------------------------------------------
@@ -1127,3 +1130,31 @@ Production. עד Milestone 9 לא קיים אף Production Deployment.
 - `alert_settings`: שורה חסרה = ברירת המחדל בקוד; `threshold_config` נשמר כ-`{percent}` (וב„ירידה בביצועים” גם `weeks`, 2–12), נבדק ב-Zod בשמירה ובקריאה. `alerts`: למשתמש הרשאת עדכון לעמודה `read_at` בלבד, ומדיניות מחיקה לבעלים שאינה מוצעת בממשק (משמשת את ניקוי הבדיקות).
 
 **השלכות:** Migration `20261103175254_alerts.sql` הוחל על `budgi-dev`; שתי הטבלאות נחשפו ב-Data API אוטומטית. ב-Milestone 9 יש להחיל אותו גם על `budgi-prod`. ה-Advisor (M8) יכול להשתמש ב-`evaluateAlerts` כדי להסביר חריגות.
+
+### ADR-12: AI Advisor — ספירה אחרי הצלחה בלי אפשרות איפוס, בדיקות לוגיות שמסירות המלצה, מודל חסכוני, ובדיקות בלי OpenAI
+
+**הקשר:** PRD 4.7 ו-ARCHITECTURE 5.6, 6.4 מגדירים מגבלה של 20 שאלות ביום, ששאלה שנכשלה אינה נספרת, ושכל סכום/אחוז בהמלצה עובר בדיקה בשרת — אבל לא מגדירים מתי בדיוק נספרת שאלה, מה קורה להמלצה שנכשלה בבדיקה, באיזה מודל משתמשים ואיך בודקים בלי עלות. בנוסף, אם למשתמש הייתה הרשאת כתיבה לטבלת המונה, הוא היה יכול לאפס אותה דרך ה-Data API ולעקוף את מגבלת העלות.
+
+**החלטה:**
+- `advisor_usage` (מפתח `(user_id, usage_date)`, מונה 0–20): למשתמש הרשאת **קריאה בלבד**. הכתיבה רק דרך `advisor_record_question()` — `security definer`, `search_path` ריק, לפי `auth.uid()`, מעלה ב-1 ולא מעבר ל-20, ו„היום” לפי `Asia/Jerusalem`. `execute` ל-`authenticated` בלבד. ה-Advisor של Supabase מתריע על פונקציית `security definer` שמשתמש מחובר יכול להריץ — זה מכוון: היא רק מוסיפה שאלה למונה של המשתמש עצמו.
+- השרת בודק את המונה **לפני** הפנייה ל-OpenAI (20 → תשובת 429 בלי פנייה), ומעלה אותו רק **אחרי** תשובה שעברה Zod. שתי בקשות במקביל יכולות לחרוג בשאלה אחת לכל היותר; הקלט מושבת בזמן המתנה, ולכן זה נדיר.
+- התשובה נדרשת ב-Structured Outputs (strict) לפי סכמת Zod אחת (`src/lib/advisor/schema.ts`, דרך `zodTextFormat` של חבילת `openai`); שדות אופציונליים הם `nullable`. ב-`reallocate` הסדר של `campaign_ids` הוא [מקור, יעד].
+- המלצה שלא עוברת את הבדיקות הלוגיות (קמפיין שאינו בהקשר, בלי סכום ובלי אחוז, סכום מעל תקציב קמפיין המקור — או ההוצאה שלו כשאין תקציב — או מעל התקציב הכולל בהגדלה, אחוז מעל 100 בהקטנה/העברה או מעל 200 בהגדלה) **מוסרת**, ונוספת הסתייגות כללית אחת. סכומים מעוגלים לשקל ואחוזים לספרה אחת. שמות הקמפיינים בכרטיס נלקחים מהנתונים לפי המזהה, לא מטקסט המודל.
+- ההקשר נבנה מחדש בכל שאלה (`src/server/services/advisor-context.ts`) מהפונקציות הקיימות (`periodSummary`, `monthForecast`, `budgetGap`, `goalProgress`): החודש הנוכחי והקודם, תחזית, תקציבים, יעדים, קמפיינים פעילים או עם תקציב/נתונים, ועד 10 התראות מהחודש. בלי שורות שבועיות גולמיות, בלי תיאורי קמפיינים, ובלי שם, אימייל, שם עסק או מזהה משתמש. ההקשר נשלח כהודעת `developer` נפרדת שמסומנת כנתונים.
+- מודל: `gpt-6-luna` (קבוע `ADVISOR_MODEL` ב-`src/server/ai/openai.ts`) — המודל החסכוני ש-OpenAI ממליצה עליו לשימוש בנפח גבוה, עם Structured Outputs. `max_output_tokens` 1,500, timeout של 45 שניות בלי ניסיון חוזר אוטומטי (ניסיון חוזר עלול לעבור את מגבלת 60 השניות של ה-Route; המשתמש לוחץ „נסה שוב”), `store: false`, ו-`maxDuration` של 60 שניות ל-Route.
+- בדיקות: Unit עם Mock ל-OpenAI ולמסד הנתונים; Integration לפונקציית המונה ול-RLS עם משתמש בדיקה B (הבדיקה עוברת גם בהרצה חוזרת באותו יום, כי אי אפשר לאפס); Playwright מחליף את `/api/advisor` בתשובות קבועות (`page.route`), כך שהבדיקות לא פונות ל-OpenAI ולא צורכות את המכסה של משתמש A. אין בקוד האפליקציה מצב Mock.
+
+**השלכות:** Migration `20261103184903_advisor_usage.sql` הוחל על `budgi-dev`; ב-Milestone 9 יש להחיל אותו גם על `budgi-prod` ולחשוף בו את הטבלה ואת הפונקציה ב-Data API. החלפת מודל היא שינוי של קבוע אחד. משתמש בדיקה B מגיע ל-20 שאלות בכל יום שבו רצות בדיקות ה-Integration, ולכן אין להשתמש בו לבדיקה ידנית של ה-Advisor באותו יום.
+
+### ADR-13: תובנות שמורות של ה-Advisor — עותק של התשובה, בבחירת המשתמש
+
+**הקשר:** לבקשת בעל המוצר, אחרי בניית ה-Advisor, נוספה האפשרות לשמור תובנות חשובות מהשיחה (PRD 4.7 ו-DESIGN 1.12 עודכנו). השיחה עצמה עדיין אינה נשמרת. צריך להחליט מה נשמר, מי מחליט, ואם תובנה מתעדכנת כשהנתונים משתנים.
+
+**החלטה:**
+- לפי החלטת המשתמש: כפתור „שמור תובנה” בכל תשובה, ורשימת „תובנות שמורות” מתקפלת במסך ה-Advisor (לא מסך נפרד). רק מה שהמשתמש בחר נשמר; אין סיכום אוטומטי של ה-AI, ושמירה אינה נספרת במגבלת 20 השאלות.
+- טבלה `advisor_insights` (`id`, `user_id`, `question`, `reply` JSONB, `created_at`). `reply` הוא עותק של התשובה כפי שהוצגה (הסבר, המלצות עם שמות הקמפיינים, הסתייגויות, בקשת נתונים חסרים), ונבדק באותה סכמת Zod (`advisorReplySchema`) בשמירה ובקריאה; שורה שאינה עוברת את הסכמה מדולגת בתצוגה. תובנה אינה מתעדכנת כשהנתונים משתנים — היא מציגה את תאריך השמירה.
+- גם תשובה חדשה מה-AI חייבת לעבור את `advisorReplySchema` (למשל עד 10 המלצות), כדי שכל תשובה שמוצגת תהיה ניתנת לשמירה.
+- RLS: קריאה, הוספה ומחיקה לבעלים בלבד; אין עדכון. אילוצים: שאלה 1–1,000 תווים, `reply` אובייקט עד 32KB. מחיקה ב-Cascade עם החשבון.
+- השמירה והמחיקה הן Server Actions (`src/features/advisor/actions.ts`); הרשימה נטענת בשרת עם המסך.
+
+**השלכות:** Migration `20261104075803_advisor_insights.sql` הוחל על `budgi-dev`; ב-Milestone 9 יש להחיל אותו גם על `budgi-prod` ולחשוף את הטבלה ב-Data API. שמות קמפיינים בתובנה ישנה נשארים כפי שהיו גם אם הקמפיין שונה או נמחק.

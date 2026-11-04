@@ -6,9 +6,10 @@ import {
   lastDayOfMonth,
   monthSummary,
   percentChange,
+  periodSummary,
   remainingBudget,
   weeksRangeForMonth,
-  type MonthSummary,
+  type PeriodSummary,
   type WeekRow,
 } from "./metrics";
 
@@ -61,8 +62,9 @@ export type CampaignDetails = {
   weeks: CampaignWeek[];
   budget: number | null;
   remaining: number | null;
-  current: MonthSummary;
-  previous: MonthSummary;
+  // Ratios carry the reason when they cannot be calculated (PRD 4.8)
+  current: PeriodSummary;
+  previous: PeriodSummary;
 };
 
 // Campaign details screen (DESIGN.md 1.5). null when not found or not the user's.
@@ -73,7 +75,7 @@ export async function getCampaignDetails(id: string): Promise<CampaignDetails | 
   const month = currentMonth();
   const [weeks, budgets] = await Promise.all([listWeeks(id), getCampaignBudgets(month)]);
   const budget = budgets.get(id) ?? null;
-  const current = monthSummary(weeks, month);
+  const current = periodSummary(weeks, { kind: "month", month });
 
   return {
     campaign,
@@ -82,6 +84,6 @@ export async function getCampaignDetails(id: string): Promise<CampaignDetails | 
     budget,
     remaining: remainingBudget(budget, current.spend),
     current,
-    previous: monthSummary(weeks, addMonths(month, -1)),
+    previous: periodSummary(weeks, { kind: "month", month: addMonths(month, -1) }),
   };
 }

@@ -24,7 +24,7 @@ export default function AlertsPage({ searchParams }: PageProps<"/alerts">) {
             href="/settings#alerts"
             className="type-small font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
           >
-            ניהול ספי התראה
+            ניהול התראות
           </Link>
         }
       />

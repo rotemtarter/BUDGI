@@ -71,29 +71,33 @@ async function CampaignDetails({ id }: { id: string }) {
         <KpiCard
           size="sm"
           label="CPL"
-          value={<Amount text={formatMoney(current.cpl, { whole: true })} />}
-          change={percentChange(current.cpl, previous.cpl)}
+          value={<Amount text={formatMoney(current.cpl.value, { whole: true })} />}
+          change={percentChange(current.cpl.value, previous.cpl.value)}
+          unavailableReason={current.cpl.reason}
           lowerIsBetter
         />
         <KpiCard
           size="sm"
           label="Cost per Deal"
-          value={<Amount text={formatMoney(current.costPerDeal, { whole: true })} />}
-          change={percentChange(current.costPerDeal, previous.costPerDeal)}
+          value={<Amount text={formatMoney(current.costPerDeal.value, { whole: true })} />}
+          change={percentChange(current.costPerDeal.value, previous.costPerDeal.value)}
+          unavailableReason={current.costPerDeal.reason}
           lowerIsBetter
         />
         <KpiCard
           size="sm"
           label="CAC"
-          value={<Amount text={formatMoney(current.cac, { whole: true })} />}
-          change={percentChange(current.cac, previous.cac)}
+          value={<Amount text={formatMoney(current.cac.value, { whole: true })} />}
+          change={percentChange(current.cac.value, previous.cac.value)}
+          unavailableReason={current.cac.reason}
           lowerIsBetter
         />
         <KpiCard
           size="sm"
           label="ROAS"
-          value={formatRoas(current.roas)}
-          change={percentChange(current.roas, previous.roas)}
+          value={formatRoas(current.roas.value)}
+          change={percentChange(current.roas.value, previous.roas.value)}
+          unavailableReason={current.roas.reason}
         />
       </section>
 

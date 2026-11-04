@@ -34,10 +34,11 @@ export async function signInTestUser(key: TestUserKey) {
   return { client, userId: data.user.id };
 }
 
-// Removes the user's alerts, alert settings, campaigns, weekly data, budgets
-// and goals and marks onboarding as not done
+// Removes the user's saved insights, alerts, alert settings, campaigns, weekly
+// data, budgets and goals and marks onboarding as not done. The Advisor's daily
+// counter cannot be reset (ADR-12).
 export async function resetTestUser(client: SupabaseClient<Database>, userId: string) {
-  for (const table of ["alerts", "alert_settings"] as const) {
+  for (const table of ["advisor_insights", "alerts", "alert_settings"] as const) {
     const result = await client.from(table).delete().eq("user_id", userId);
     if (result.error) throw result.error;
   }

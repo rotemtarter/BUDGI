@@ -15,6 +15,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      advisor_insights: {
+        Row: {
+          created_at: string
+          id: string
+          question: string
+          reply: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question: string
+          reply: Json
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question?: string
+          reply?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      advisor_usage: {
+        Row: {
+          question_count: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          question_count?: number
+          usage_date: string
+          user_id: string
+        }
+        Update: {
+          question_count?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alert_settings: {
         Row: {
           alert_type: string
@@ -344,6 +386,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advisor_record_question: { Args: never; Returns: number }
       commit_import: {
         Args: {
           p_errors: Json

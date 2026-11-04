@@ -59,6 +59,10 @@ test("empty state, then a new campaign opens its details", async ({ page }) => {
   await expect(v.heading(NAME)).toBeVisible();
   await expect(v.text("₪5,000")).toBeVisible();
   await expect(v.text("עוד לא הוזנו נתונים לקמפיין הזה")).toBeVisible();
+  // Without data the month's metrics say why they are not available (PRD 4.8)
+  const cards = page.getByRole("region", { name: "מדדי החודש" });
+  await expect(cards.getByText("לא זמין")).toHaveCount(4);
+  await expect(cards.getByText("לא הוזנו לידים בתקופה")).toBeVisible();
 });
 
 test("the same name on the same platform is rejected", async ({ page }) => {

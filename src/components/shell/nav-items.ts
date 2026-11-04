@@ -20,7 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/budget", label: "תקציב", icon: Wallet },
   { href: "/metrics", label: "מדדים", icon: BarChart3 },
   { href: "/forecast", label: "תחזית", icon: TrendingUp },
-  { href: "/advisor", label: "AI Advisor", icon: Sparkles },
+  { href: "/advisor", label: "AI Budget", icon: Sparkles },
   { href: "/alerts", label: "התראות", icon: Bell },
   { href: "/imports", label: "ייבוא נתונים", icon: Upload },
   { href: "/settings", label: "הגדרות", icon: Settings },

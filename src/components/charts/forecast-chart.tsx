@@ -132,29 +132,32 @@ function ForecastTooltip({ active, payload }: { active?: boolean; payload?: { pa
 // Text alternative for screen readers (DESIGN.md 2.5)
 function ForecastTable({ caption, data, forecast }: { caption: string; data: ForecastPoint[]; forecast: boolean }) {
   return (
-    <table className="sr-only">
-      <caption>{caption}</caption>
-      <thead>
-        <tr>
-          <th scope="col">שבוע</th>
-          <th scope="col">הכנסות</th>
-          <th scope="col">הוצאות</th>
-          {forecast && <th scope="col">הכנסות צפויות</th>}
-          {forecast && <th scope="col">הוצאות צפויות</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((point) => (
-          <tr key={point.weekStart}>
-            <th scope="row">{formatWeekRange(point.weekStart)}</th>
-            <td>{formatMoney(point.revenue, { whole: true })}</td>
-            <td>{formatMoney(point.spend, { whole: true })}</td>
-            {forecast && <td>{formatMoney(isExpected(point.revenue, point.revenueForecast) ? point.revenueForecast : null, { whole: true })}</td>}
-            {forecast && <td>{formatMoney(isExpected(point.spend, point.spendForecast) ? point.spendForecast : null, { whole: true })}</td>}
+    // sr-only on the wrapper: a table ignores the 1px width and would widen the page
+    <div className="sr-only">
+      <table>
+        <caption>{caption}</caption>
+        <thead>
+          <tr>
+            <th scope="col">שבוע</th>
+            <th scope="col">הכנסות</th>
+            <th scope="col">הוצאות</th>
+            {forecast && <th scope="col">הכנסות צפויות</th>}
+            {forecast && <th scope="col">הוצאות צפויות</th>}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {data.map((point) => (
+            <tr key={point.weekStart}>
+              <th scope="row">{formatWeekRange(point.weekStart)}</th>
+              <td>{formatMoney(point.revenue, { whole: true })}</td>
+              <td>{formatMoney(point.spend, { whole: true })}</td>
+              {forecast && <td>{formatMoney(isExpected(point.revenue, point.revenueForecast) ? point.revenueForecast : null, { whole: true })}</td>}
+              {forecast && <td>{formatMoney(isExpected(point.spend, point.spendForecast) ? point.spendForecast : null, { whole: true })}</td>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

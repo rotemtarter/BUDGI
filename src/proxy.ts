@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 // Pages that work without signing in
-const PUBLIC_PATHS = ["/login", "/terms", "/privacy", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/terms", "/privacy", "/auth/callback", "/auth/signout"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

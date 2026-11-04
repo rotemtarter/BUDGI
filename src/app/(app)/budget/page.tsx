@@ -107,7 +107,8 @@ function Stat({ label, children, note }: { label: string; children: ReactNode; n
       <dd className="type-h3 font-semibold text-brand-dark" style={{ textAlign: "right" }}>
         {children}
       </dd>
-      {note}
+      {/* Inside a <dl> group only dt/dd are allowed (axe definition-list) */}
+      {note && <dd>{note}</dd>}
     </div>
   );
 }

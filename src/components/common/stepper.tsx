@@ -8,7 +8,7 @@ export function Stepper({ steps, current }: { steps: readonly string[]; current:
       <p className="type-small text-muted-foreground md:hidden">
         שלב {current + 1} מתוך {steps.length} · <span className="font-medium text-brand-dark">{steps[current]}</span>
       </p>
-      <ol className="hidden items-center gap-3 md:flex">
+      <ol className="hidden flex-wrap items-center gap-3 md:flex">
         {steps.map((label, index) => {
           const done = index < current;
           const active = index === current;

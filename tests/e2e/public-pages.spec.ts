@@ -17,10 +17,11 @@ test("login screen: Hebrew RTL, Google button and legal links", async ({ page })
   await page.getByRole("link", { name: "תנאי שימוש" }).click();
   await expect(page).toHaveURL(/\/terms$/);
   await expect(page.getByRole("heading", { name: "תנאי שימוש" })).toBeVisible();
-  await expect(page.getByText("התוכן יעודכן בקרוב.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "1. השירות" })).toBeVisible();
 
   await page.goto("/privacy");
   await expect(page.getByRole("heading", { name: "מדיניות פרטיות" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "4. עוזר ה-AI" })).toBeVisible();
 });
 
 test("failed sign-in shows an error above the button", async ({ page }) => {

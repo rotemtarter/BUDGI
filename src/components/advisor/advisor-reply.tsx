@@ -120,7 +120,8 @@ function Limitations({ items }: { items: string[] }) {
         <Info aria-hidden className="size-4" />
         הסתייגויות
       </h3>
-      <ul className="list-disc ps-5 type-small text-muted-foreground">
+      {/* Gray is below 4.5:1 on bg-muted (axe) */}
+      <ul className="list-disc ps-5 type-small text-brand-dark/80">
         {items.map((item, i) => (
           <li key={i} dir="auto">
             {item}

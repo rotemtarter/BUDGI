@@ -19,10 +19,12 @@ export function PlatformBadge({ platform, className }: { platform: Platform; cla
   );
 }
 
+// Status text on white keeps 4.5:1 or more on any surface (DESIGN.md 2.1, axe);
+// a tinted background under it would not
 const STATUS_STYLES: Record<CampaignStatus, string> = {
-  active: "bg-success/10 text-success",
-  paused: "bg-warning/10 text-warning",
-  ended: "bg-muted text-brand-gray",
+  active: "border border-success/30 bg-white text-success",
+  paused: "border border-warning/30 bg-white text-warning",
+  ended: "bg-muted text-brand-dark",
 };
 
 export function StatusBadge({ status }: { status: CampaignStatus }) {

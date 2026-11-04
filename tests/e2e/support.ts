@@ -7,6 +7,15 @@ export const AUTH_FILE = "tests/e2e/.auth/user-a.json";
 // Signs a test user in with Email/Password (budgi-dev only, ADR-3) and returns
 // the same session cookies the app sets after Google sign-in.
 export async function sessionCookies(key: TestUserKey, baseURL: string) {
+  return sessionCookiesFor(testUserCredentials(key), baseURL, `test user ${key}`);
+}
+
+// Same, for any Email/Password user of budgi-dev (e.g. a temporary user)
+export async function sessionCookiesFor(
+  credentials: { email: string; password: string },
+  baseURL: string,
+  label = "user",
+) {
   const jar = new Map<string, string>();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,8 +27,8 @@ export async function sessionCookies(key: TestUserKey, baseURL: string) {
       },
     },
   );
-  const { error } = await supabase.auth.signInWithPassword(testUserCredentials(key));
-  if (error) throw new Error(`Sign-in failed for test user ${key}: ${error.message}`);
+  const { error } = await supabase.auth.signInWithPassword(credentials);
+  if (error) throw new Error(`Sign-in failed for ${label}: ${error.message}`);
 
   const { hostname } = new URL(baseURL);
   return [...jar].map(([name, value]) => ({

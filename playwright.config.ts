@@ -28,6 +28,13 @@ export default defineConfig({
       dependencies: ["setup"],
     },
     {
+      // Smallest width with the sidebar (DESIGN.md 1.15); layout and accessibility only
+      name: "tablet",
+      testMatch: /(responsive|accessibility)\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 768, height: 1024 }, storageState: AUTH_FILE },
+      dependencies: ["setup"],
+    },
+    {
       name: "mobile",
       use: { ...devices["Pixel 7"], storageState: AUTH_FILE },
       dependencies: ["setup"],

@@ -13,10 +13,11 @@ import { signOutAction } from "@/features/auth/actions";
 import { BusinessNameForm } from "@/features/profile/business-name-form";
 import { AlertSettingsForm } from "@/features/alerts/alert-settings-form";
 import { getAlertSettings } from "@/server/repositories/alerts";
+import { DeleteAccountCard } from "@/features/account/delete-account";
 
 export const metadata: Metadata = { title: "הגדרות · Budgi" };
 
-// DESIGN.md 1.10, areas 1–5. Account deletion (M9) is added later.
+// DESIGN.md 1.10, areas 1–6
 export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
   return (
     <>
@@ -56,6 +57,7 @@ export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
             </form>
           </CardContent>
         </Card>
+        <DeleteAccountCard />
       </div>
     </>
   );

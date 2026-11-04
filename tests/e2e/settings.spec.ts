@@ -102,3 +102,14 @@ test("a business name replaces the Google name at the top, until it is emptied",
   await expect(page.getByText("יוצג השם מחשבון Google")).toBeVisible();
   await expectAccount(/מאפיית רותם/, "icon-user");
 });
+
+test("legal pages and the danger zone are on the settings screen", async ({ page }) => {
+  await page.goto("/settings");
+  await expect(page.getByText("מחיקת חשבון", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "מחיקת החשבון" })).toBeVisible();
+  await page.getByRole("link", { name: "מדיניות פרטיות" }).click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await page.goto("/settings");
+  await page.getByRole("link", { name: "תנאי שימוש" }).click();
+  await expect(page).toHaveURL(/\/terms$/);
+});

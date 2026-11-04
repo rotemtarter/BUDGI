@@ -26,7 +26,8 @@ export function ForecastBasis({
       className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-brand-light-gray bg-accent/40 px-4 py-3 type-small text-brand-dark"
     >
       <span className="font-medium">התחזית {BASIS_LABEL[basis]}</span>
-      <span className="text-muted-foreground">
+      {/* Dark text: gray is below 4.5:1 on this purple tint (axe) */}
+      <span className="text-brand-dark/80">
         (נתונים עד <span dir="ltr">{until}</span>, {coveredDays} מתוך {daysInMonth} ימים).
       </span>
       <span>התחזית היא הערכה ולא הבטחה.</span>

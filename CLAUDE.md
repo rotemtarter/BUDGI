@@ -59,4 +59,4 @@
 ## פקודות הרצה
 > Claude ממלא זאת ברגע שהאפליקציה יכולה לרוץ (בדרך כלל בסיום Milestone 1), ומעדכן אם משהו משתנה.
 - **הרצה (dev):** `npm run dev` (נפתח ב-http://localhost:3000)
-- **בדיקות (test):** `npm test` (Vitest), `npm run test:e2e` (Playwright); בנוסף `npm run lint`, `npm run typecheck`, `npm run build`
+- **בדיקות (test):** `npm test` (Vitest), `npm run test:e2e` (Playwright); בנוסף `npm run lint`, `npm run typecheck`, `npm run build`, ובדיקת Secrets `npm run check:secrets` (אחרי `build`)

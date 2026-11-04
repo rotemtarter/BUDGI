@@ -17,11 +17,12 @@ const ICONS: Record<AlertType, LucideIcon> = {
   goal_reached: Trophy,
 };
 
-// Status colors (DESIGN.md 2.1); the severity is also written out in text
+// Status colors (DESIGN.md 2.1); the severity is also written out in text.
+// Badge text sits on white, so it keeps 4.5:1 also on an unread card (axe).
 const SEVERITY_STYLES: Record<AlertSeverity, { icon: string; badge: string }> = {
-  critical: { icon: "bg-error/10 text-error", badge: "bg-error/10 text-error" },
-  warning: { icon: "bg-warning/10 text-warning", badge: "bg-warning/10 text-warning" },
-  info: { icon: "bg-success/10 text-success", badge: "bg-success/10 text-success" },
+  critical: { icon: "bg-error/10 text-error", badge: "border border-error/30 bg-white text-error" },
+  warning: { icon: "bg-warning/10 text-warning", badge: "border border-warning/30 bg-white text-warning" },
+  info: { icon: "bg-success/10 text-success", badge: "border border-success/30 bg-white text-success" },
 };
 
 // One alert in the alert center (DESIGN.md 1.9). A click marks it as read and
@@ -31,6 +32,8 @@ export function AlertCard({ alert, time }: { alert: StoredAlert; time: string })
   const Icon = ICONS[alert.type];
   const styles = SEVERITY_STYLES[alert.severity];
   const unread = alert.readAt === null;
+  // Gray is below 4.5:1 on the purple tint of an unread card (axe)
+  const secondary = unread ? "text-brand-dark/80" : "text-muted-foreground";
 
   function open() {
     startTransition(async () => {
@@ -70,12 +73,12 @@ export function AlertCard({ alert, time }: { alert: StoredAlert; time: string })
         </span>
         <span className="type-small text-brand-dark">{alert.description}</span>
         {alert.campaign && (
-          <span className="flex flex-wrap items-center gap-2 type-small text-muted-foreground">
+          <span className={cn("flex flex-wrap items-center gap-2 type-small", secondary)}>
             <span dir="auto">{alert.campaign.name}</span>
             <PlatformBadge platform={alert.campaign.platform} />
           </span>
         )}
-        <span className="type-caption text-muted-foreground">{time}</span>
+        <span className={cn("type-caption", secondary)}>{time}</span>
       </span>
     </button>
   );

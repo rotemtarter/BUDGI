@@ -13,7 +13,8 @@ const format = (field: ValueField, value: number | null) =>
   MONEY.includes(field) ? formatMoney(value) : formatCount(value);
 
 // Step 3 of an import into one campaign: the file's totals for the week, next
-// to what is stored now. An empty total keeps the stored value.
+// to what is stored now. An empty total keeps the stored value. For a full
+// month, the totals are split into the month's weeks (ADR-16).
 export function CampaignReviewStep({
   campaignName,
   summary,
@@ -32,11 +33,25 @@ export function CampaignReviewStep({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="type-body">
-        {rowsLabel(summary.rowsSummed)} מהקובץ יחוברו לשבוע <span dir="ltr">{formatWeekRange(summary.weekStart)}</span> בקמפיין{" "}
-        <bdi className="font-medium">{campaignName}</bdi>.
-        {summary.crossesWeeks && " הטווח עובר בין שני שבועות, והנתונים נשמרים לשבוע שבו רוב הימים."}
-      </p>
+      {summary.month ? (
+        <p className="type-body">
+          {rowsLabel(summary.rowsSummed)} מהקובץ יחוברו ויחולקו ל-{summary.month.weeks.length} שבועות של החודש (
+          <span dir="ltr">{formatWeekRange(summary.month.weeks[0])}</span> עד{" "}
+          <span dir="ltr">{formatWeekRange(summary.month.weeks[summary.month.weeks.length - 1])}</span>) בקמפיין{" "}
+          <bdi className="font-medium">{campaignName}</bdi>, לפי מספר הימים בכל שבוע. זו הערכה.
+        </p>
+      ) : (
+        <p className="type-body">
+          {rowsLabel(summary.rowsSummed)} מהקובץ יחוברו לשבוע <span dir="ltr">{formatWeekRange(summary.weekStart)}</span> בקמפיין{" "}
+          <bdi className="font-medium">{campaignName}</bdi>.
+          {summary.crossesWeeks && " הטווח עובר בין שני שבועות, והנתונים נשמרים לשבוע שבו רוב הימים."}
+        </p>
+      )}
+      {summary.month && summary.month.existingWeeks > 0 && (
+        <p role="status" className="type-small text-warning">
+          ל-{summary.month.existingWeeks} מהשבועות האלה כבר יש נתונים. הערכים מהחלוקה יחליפו אותם; שדה שאין לו ערך בקובץ יישאר כמו שהוא.
+        </p>
+      )}
       {existing && (
         <p role="status" className="type-small text-warning">
           לשבוע הזה כבר יש נתונים. הערכים מהקובץ יחליפו אותם; שדה שאין לו ערך בקובץ יישאר כמו שהוא.
@@ -48,9 +63,9 @@ export function CampaignReviewStep({
           <thead>
             <tr className="border-b border-brand-light-gray type-small text-muted-foreground">
               <th scope="col" className="px-4 py-3 font-medium">שדה</th>
-              <th scope="col" className="px-4 py-3 font-medium">סה״כ בקובץ</th>
+              <th scope="col" className="px-4 py-3 font-medium">{summary.month ? "סה״כ לחודש בקובץ" : "סה״כ בקובץ"}</th>
               {existing && <th scope="col" className="px-4 py-3 font-medium">שמור עכשיו</th>}
-              <th scope="col" className="px-4 py-3 font-medium">יישמר</th>
+              {!summary.month && <th scope="col" className="px-4 py-3 font-medium">יישמר</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-brand-light-gray type-small">
@@ -61,7 +76,9 @@ export function CampaignReviewStep({
                   <th scope="row" className="px-4 py-3 text-start font-medium">{FIELD_LABELS[field]}</th>
                   <td className="px-4 py-3" dir="ltr" style={{ textAlign: "right" }}>{format(field, totals[field])}</td>
                   {existing && <td className="px-4 py-3" dir="ltr" style={{ textAlign: "right" }}>{format(field, existing[field])}</td>}
-                  <td className="px-4 py-3 font-semibold" dir="ltr" style={{ textAlign: "right" }}>{format(field, saved)}</td>
+                  {!summary.month && (
+                    <td className="px-4 py-3 font-semibold" dir="ltr" style={{ textAlign: "right" }}>{format(field, saved)}</td>
+                  )}
                 </tr>
               );
             })}

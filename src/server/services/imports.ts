@@ -1,5 +1,14 @@
 import "server-only";
-import { emptyMapping, periodCrossesWeeks, periodWeek, VALUE_FIELDS, type ColumnMapping } from "@/lib/imports/fields";
+import {
+  emptyMapping,
+  isFullMonth,
+  monthWeeks,
+  periodCrossesWeeks,
+  periodWeek,
+  splitMonth,
+  VALUE_FIELDS,
+  type ColumnMapping,
+} from "@/lib/imports/fields";
 import { suggestMapping, validateMapping } from "@/lib/imports/mapping";
 import { campaignKey, cellText } from "@/lib/imports/normalize";
 import { buildPreview, type ImportPlan } from "@/lib/imports/preview";
@@ -72,6 +81,7 @@ export async function previewImport(file: UploadedFile, mappingInput?: unknown):
       newCampaigns: plan.newCampaigns,
       errors,
       adjusted,
+      monthWeeks: mapping.period && isFullMonth(mapping.period) ? monthWeeks(mapping.period).length : null,
     },
   };
 }
@@ -117,8 +127,31 @@ async function sumForCampaign(table: ImportTable, campaign: Campaign, mappingInp
   const mapping = resolveMapping(table, mappingInput, true);
   const sum = sumRows(table, mapping);
   const period = mapping.period!;
+  // A full month: the totals are split into the month's weeks (ADR-16)
+  if (isFullMonth(period)) {
+    const weeks = monthWeeks(period);
+    const stored = await findExistingWeeks([campaign.id], weeks[0], weeks[weeks.length - 1]);
+    const rows = splitMonth(period, sum.totals);
+    return {
+      mapping,
+      sum,
+      weekStart: weeks[0],
+      crossesWeeks: false,
+      existing: null,
+      month: { weeks, existingWeeks: stored.size },
+      rows,
+    };
+  }
   const weekStart = periodWeek(period);
-  return { mapping, sum, weekStart, crossesWeeks: periodCrossesWeeks(period), existing: await findWeekValues(campaign.id, weekStart) };
+  return {
+    mapping,
+    sum,
+    weekStart,
+    crossesWeeks: periodCrossesWeeks(period),
+    existing: await findWeekValues(campaign.id, weekStart),
+    month: null,
+    rows: [{ weekStart, ...sum.totals }],
+  };
 }
 
 export async function previewCampaignImport(
@@ -137,25 +170,30 @@ export async function previewCampaignImport(
     return { ok: true, stage: "mapping", ...columnsOf(table, mapping) };
   }
 
-  const { mapping, sum, weekStart, crossesWeeks, existing } = await sumForCampaign(table, campaign, mappingInput);
+  const { mapping, sum, weekStart, crossesWeeks, existing, month } = await sumForCampaign(table, campaign, mappingInput);
   return {
     ok: true,
     stage: "campaign-review",
     ...columnsOf(table, mapping),
-    summary: { weekStart, crossesWeeks, existing, ...sum },
+    summary: { weekStart, crossesWeeks, existing, month, ...sum },
   };
 }
 
 export async function commitCampaignImport(file: UploadedFile, campaignId: string, mappingInput: unknown): Promise<CommitResult> {
   const campaign = await requireCampaign(campaignId);
   const table = readImportFile(file);
-  const { sum, weekStart } = await sumForCampaign(table, campaign, mappingInput);
+  const { sum, rows: weeks } = await sumForCampaign(table, campaign, mappingInput);
   if (sum.errors.length > 0) throw new ImportInputError(CAMPAIGN_ROW_ERRORS_MESSAGE);
   if (sum.rowsSummed === 0) throw new ImportInputError(NOTHING_TO_IMPORT_MESSAGE);
 
-  const row = { name: campaign.name, platform: campaign.platform, week_start: weekStart, ...sum.totals };
+  const rows = weeks.map(({ weekStart, ...values }) => ({
+    name: campaign.name,
+    platform: campaign.platform,
+    week_start: weekStart,
+    ...values,
+  }));
   try {
-    const saved = await saveImport({ fileName: file.name, rows: [row], rowsTotal: table.rows.length, errors: [] });
+    const saved = await saveImport({ fileName: file.name, rows, rowsTotal: table.rows.length, errors: [] });
     return {
       rowsImported: saved.rowsInserted + saved.rowsUpdated,
       rowsInserted: saved.rowsInserted,

@@ -26,7 +26,14 @@ export function DoneStep({
         </span>
         <p className="type-h3">הנתונים נשמרו</p>
         <p className="type-body">
-          {result.rowsUpdated > 0 ? "עודכן" : "נוסף"} שבוע <span dir="ltr">{formatWeekRange(campaign.weekStart)}</span> בקמפיין{" "}
+          {result.rowsImported > 1 ? (
+            // A full month, split into its weeks (ADR-16)
+            <>נשמרו {result.rowsImported} שבועות של החודש בקמפיין </>
+          ) : (
+            <>
+              {result.rowsUpdated > 0 ? "עודכן" : "נוסף"} שבוע <span dir="ltr">{formatWeekRange(campaign.weekStart)}</span> בקמפיין{" "}
+            </>
+          )}
           <bdi className="font-medium">{campaign.name}</bdi>
         </p>
         <div className="flex flex-wrap justify-center gap-3">

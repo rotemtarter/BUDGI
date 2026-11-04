@@ -9,19 +9,52 @@ import {
   type ColumnMapping,
 } from "./fields";
 
+// Lower case, without currency marks ("(ILS)", "₪", "_ils") and with "_" / "-"
+// as spaces: "Amount spent (ILS)" → "amount spent", "Spend_ILS" → "spend"
 function normalizeHeader(header: string): string {
-  return header.trim().toLowerCase().replace(/\s+/g, " ");
+  return header
+    .toLowerCase()
+    .replace(/[₪$]/g, " ")
+    .replace(/\((ils|nis|usd|₪)\)/g, " ")
+    .replace(/[_\-./]+/g, " ")
+    .replace(/\b(ils|nis|usd)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-// Matches file headers to the sample-file headers. `auto` is true when the
-// campaign, platform and week columns were all found, so the mapping step can
-// be skipped (DESIGN.md 1.11).
+// Common column names in ad-platform exports and spreadsheets, in English and
+// Hebrew (normalized). The Budgi sample-file header is always one of them.
+const HEADER_NAMES: Record<(typeof IMPORT_FIELDS)[number]["key"], string[]> = {
+  name: ["campaign", "campaign name", "campaigns", "ad name", "ad set name", "קמפיין", "שם הקמפיין"],
+  platform: ["platform", "channel", "network", "פלטפורמה", "ערוץ"],
+  // Week columns only: a daily "date" column would put several rows in one
+  // week, so dates are left to choose
+  week: ["week", "week start", "week starting", "week of", "reporting starts", "שבוע", "תחילת השבוע"],
+  spend: ["spend", "amount spent", "cost", "costs", "total spend", "ad spend", "הוצאות", "עלות", "סכום שהוצא"],
+  leads: ["leads", "lead", "ליד"],
+  deals: ["deals", "deal", "sales", "purchases", "conversions", "orders", "מכירות", "המרות", "עסקה"],
+  new_customers: ["new customers", "new customer", "customers", "לקוחות", "לקוח חדש"],
+  revenue: [
+    "revenue", "income", "purchase value", "purchases conversion value", "conversion value", "conv value",
+    "total revenue", "sales value", "הכנסה", "הכנסות", "שווי המרות",
+  ],
+};
+
+// Matches file headers to Budgi fields by the sample-file headers and common
+// export names; each column is used once. `auto` is true when the campaign,
+// platform and week columns were all found, so the mapping step can be
+// skipped (DESIGN.md 1.11). Otherwise the mapping step opens filled in, and
+// usually only the platform (and dates) are left to choose.
 export function suggestMapping(headers: string[]): { mapping: ColumnMapping; auto: boolean } {
   const mapping = emptyMapping();
   const normalized = headers.map(normalizeHeader);
+  const used = new Set<number>();
   for (const field of IMPORT_FIELDS) {
-    const index = normalized.indexOf(normalizeHeader(field.header));
-    if (index !== -1) mapping[field.key] = index;
+    const names = [normalizeHeader(field.header), ...HEADER_NAMES[field.key]];
+    const index = normalized.findIndex((header, i) => !used.has(i) && names.includes(header));
+    if (index === -1) continue;
+    mapping[field.key] = index;
+    used.add(index);
   }
   return { mapping, auto: mapping.name !== null && mapping.platform !== null && mapping.week !== null };
 }

@@ -25,10 +25,30 @@ describe("suggestMapping", () => {
     expect(mapping).toMatchObject({ name: 3, platform: 2, week: 1, spend: null });
   });
 
-  it("asks for a manual mapping when a required header is missing", () => {
+  it("recognizes common export names, so the import can be automatic", () => {
     const { mapping, auto } = suggestMapping(["Campaign", "פלטפורמה", "Week", "הוצאה"]);
+    expect(auto).toBe(true);
+    expect(mapping).toMatchObject({ name: 0, platform: 1, week: 2, spend: 3 });
+  });
+
+  it("fills in an ads export; only the platform and dates are left", () => {
+    const headers = ["Campaign", "Spend_ILS", "Leads", "New_Customers", "Revenue_ILS", "Date"];
+    const { mapping, auto } = suggestMapping(headers);
     expect(auto).toBe(false);
-    expect(mapping).toMatchObject({ name: null, platform: 1, week: null, spend: 3 });
+    expect(mapping).toMatchObject({
+      name: 0, spend: 1, leads: 2, new_customers: 3, revenue: 4,
+      // No deals column: not guessed from another one. A daily date is not a week.
+      deals: null, platform: null, week: null,
+    });
+    expect(suggestMapping(["Ad name", "Amount spent (ILS)", "Reporting starts"]).mapping).toMatchObject({
+      name: 0, spend: 1, week: 2,
+    });
+  });
+
+  it("asks for a manual mapping when a required header is missing", () => {
+    const { mapping, auto } = suggestMapping(["Notes", "פלטפורמה", "הוצאה"]);
+    expect(auto).toBe(false);
+    expect(mapping).toMatchObject({ name: null, platform: 1, week: null, spend: 2 });
   });
 });
 
@@ -68,9 +88,12 @@ describe("validateMapping", () => {
     expect(validateMapping({ name: 0 }, 3)).toEqual({ ok: false, message: "יש לבחור: פלטפורמה, תאריכים" });
   });
 
-  it("rejects dates longer than 8 days, in the wrong order, or unfinished", () => {
+  it("rejects dates longer than 8 days unless a full month, in the wrong order, or unfinished", () => {
     const period = (from: string, to: string) => validateMapping({ name: 0, platform: "meta_ads", period: { from, to } }, 3);
-    expect(period("2026-10-01", "2026-10-31")).toEqual({ ok: false, message: PERIOD_MESSAGES.tooLong });
+    expect(period("2026-10-01", "2026-10-31").ok).toBe(true);
+    expect(period("2026-02-01", "2026-02-28").ok).toBe(true);
+    expect(period("2026-10-01", "2026-10-30")).toEqual({ ok: false, message: PERIOD_MESSAGES.tooLong });
+    expect(period("2026-10-15", "2026-11-14")).toEqual({ ok: false, message: PERIOD_MESSAGES.tooLong });
     expect(period("2026-11-03", "2026-11-11")).toEqual({ ok: false, message: PERIOD_MESSAGES.tooLong });
     expect(period("2026-11-03", "2026-11-10").ok).toBe(true);
     expect(period("2026-10-30", "2026-10-27")).toEqual({ ok: false, message: PERIOD_MESSAGES.order });

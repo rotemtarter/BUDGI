@@ -100,7 +100,8 @@ test("a file with other headers: platform for the whole file and typed dates", a
   await expect(visible(page).heading("התאמת עמודות")).toBeVisible();
   const proceed = visible(page).button("המשך");
   await expect(proceed).toBeDisabled();
-  await expect(visible(page).text("יש לבחור: פלטפורמה, שם קמפיין, תאריכים")).toBeVisible();
+  // The ads export's columns are recognized; only the platform is left
+  await expect(visible(page).text("יש לבחור: פלטפורמה")).toBeVisible();
 
   const choose = async (field: RegExp, option: string) => {
     await page.getByRole("combobox", { name: field }).filter({ visible: true }).click();
@@ -119,13 +120,19 @@ test("a file with other headers: platform for the whole file and typed dates", a
   await choose(/^שם קמפיין/, "Ad name");
   await choose(/^הוצאה/, "Amount spent (ILS)");
   await choose(/^לידים/, "Leads");
-  await expect(visible(page).text("יש לבחור: תאריכים")).toBeVisible();
+  // The week comes from "Reporting starts"; dates can be typed instead
+  await expect(visible(page).text(/מהעמודה „Reporting starts” בקובץ/)).toBeVisible();
+  await expect(proceed).toBeEnabled();
+  await visible(page).button("הזנת תאריכים ידנית").click();
 
-  // Dates may cover up to 8 days
+  // Dates may cover up to 8 days, or one full month
   await page.getByLabel("מתאריך").filter({ visible: true }).fill("2026-10-01");
-  await page.getByLabel("עד תאריך").filter({ visible: true }).fill("2026-10-31");
-  await expect(visible(page).text(/הטווח ארוך מ-8 ימים/)).toBeVisible();
+  await page.getByLabel("עד תאריך").filter({ visible: true }).fill("2026-10-30");
+  await expect(visible(page).text(/אפשר לבחור עד 8 ימים, או חודש מלא/)).toBeVisible();
   await expect(proceed).toBeDisabled();
+  await page.getByLabel("עד תאריך").filter({ visible: true }).fill("2026-10-31");
+  await expect(visible(page).text("אוקטובר 2026, מחולק ל-5 שבועות")).toBeVisible();
+  await expect(proceed).toBeEnabled();
 
   await page.getByLabel("מתאריך").filter({ visible: true }).fill("2026-10-27");
   await page.getByLabel("עד תאריך").filter({ visible: true }).fill("2026-10-29");
@@ -263,4 +270,65 @@ test("unsupported, empty and too large files get a clear message", async ({ page
   // A renamed file is caught by the server
   await upload(page, { name: "fake.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from("a,b\n1,2") });
   await expect(page.getByRole("alert").filter({ hasText: "סוג הקובץ לא נתמך" })).toBeVisible();
+});
+
+test("a full month is split into the month's weeks by days (ADR-16)", async ({ page }) => {
+  await resetUserACampaigns();
+  await upload(page, `${FIXTURES}/meta-export.csv`);
+  await expect(visible(page).heading("התאמת עמודות")).toBeVisible();
+  const choose = async (field: RegExp, option: string) => {
+    await page.getByRole("combobox", { name: field }).filter({ visible: true }).click();
+    await page.getByRole("option", { name: option, exact: true }).click();
+  };
+  await choose(/^פלטפורמה/, "Meta Ads – לכל השורות");
+  await choose(/^שם קמפיין/, "Ad name");
+  await choose(/^הוצאה/, "Amount spent (ILS)");
+  await choose(/^לידים/, "Leads");
+  await visible(page).button("הזנת תאריכים ידנית").click();
+  await page.getByLabel("מתאריך").filter({ visible: true }).fill("2026-10-01");
+  await page.getByLabel("עד תאריך").filter({ visible: true }).fill("2026-10-31");
+  await expect(visible(page).text("אוקטובר 2026, מחולק ל-5 שבועות")).toBeVisible();
+  await visible(page).button("המשך").click();
+
+  await expect(visible(page).text(/כל שורה בקובץ חולקה ל-5 שבועות/)).toBeVisible();
+  expect(await summary(page, "שורות חדשות")).toBe("10");
+  await visible(page).button("ייבוא 10 שורות").click();
+  await expect(visible(page).text("נוצרו 2 קמפיינים חדשים")).toBeVisible();
+
+  // The month's totals on the home screen equal the file's totals
+  await page.goto("/dashboard?period=month&value=2026-10");
+  const cards = page.getByRole("region", { name: "נתוני התקופה" }).filter({ visible: true });
+  await expect(cards.getByText("₪1,841")).toBeVisible(); // 1,200.50 + 640
+
+  // Five week rows per campaign, the one of 4.10–10.10 a full week at the pace
+  const { client } = await signInTestUser("A");
+  const { data } = await client.from("campaign_performance").select("week_start, spend, campaigns(name)").order("week_start");
+  const video = data!.filter((row) => row.campaigns?.name === "Video: customer review");
+  expect(video.map((row) => row.week_start)).toEqual(["2026-09-27", "2026-10-04", "2026-10-11", "2026-10-18", "2026-10-25"]);
+  expect(video[1].spend).toBe(271.08); // 1,200.50 ÷ 31 × 7
+});
+
+test("a full month into one campaign is split into its weeks", async ({ page }) => {
+  await resetUserACampaigns();
+  const { client } = await signInTestUser("A");
+  const { data: campaign } = await client.from("campaigns").insert({ name: "Month Campaign", platform: "meta_ads" }).select("id").single();
+
+  await page.goto(`/imports?campaign=${campaign!.id}`);
+  await expect(visible(page).text("גרור קובץ לכאן או בחר קובץ")).toBeVisible();
+  await page.locator('input[type="file"]').setInputFiles(`${FIXTURES}/meta-export.csv`);
+  await page.getByRole("combobox", { name: /^הוצאה/ }).filter({ visible: true }).click();
+  await page.getByRole("option", { name: "Amount spent (ILS)", exact: true }).click();
+  await page.getByLabel("מתאריך").filter({ visible: true }).fill("2026-11-01");
+  await page.getByLabel("עד תאריך").filter({ visible: true }).fill("2026-11-30");
+  await visible(page).button("המשך").click();
+
+  await expect(visible(page).text(/יחוברו ויחולקו ל-5 שבועות של החודש/)).toBeVisible();
+  await visible(page).button("שמירה לקמפיין").click();
+  await expect(visible(page).text(/נשמרו 5 שבועות של החודש/)).toBeVisible();
+
+  const { data: weeks } = await client.from("campaign_performance").select("week_start, spend").order("week_start");
+  // 1,840.50 ÷ 30 × 7 = 429.45 for every week of November
+  expect(weeks).toEqual(
+    ["2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"].map((week_start) => ({ week_start, spend: 429.45 })),
+  );
 });

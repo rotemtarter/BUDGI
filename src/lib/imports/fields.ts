@@ -27,7 +27,8 @@ export const FIELD_LABELS = Object.fromEntries(IMPORT_FIELDS.map((f) => [f.key, 
   string
 >;
 
-// Dates typed once for the whole file, up to 8 days (a "last 7 days" export)
+// Dates typed once for the whole file: up to 8 days (a "last 7 days" export),
+// or one full calendar month, which is split into its weeks (ADR-16)
 export type ImportPeriod = { from: string; to: string };
 
 export const MAX_PERIOD_DAYS = 8;
@@ -54,19 +55,82 @@ export function isPlatformValue(value: unknown): value is Platform {
 export const PERIOD_MESSAGES = {
   missing: "יש לבחור מתאריך ועד תאריך",
   order: "תאריך הסיום לפני תאריך ההתחלה",
-  tooLong: `הטווח ארוך מ-${MAX_PERIOD_DAYS} ימים. יש לייצא את הנתונים מהפלטפורמה לפי שבוע.`,
+  tooLong: `אפשר לבחור עד ${MAX_PERIOD_DAYS} ימים, או חודש מלא (מה-1 בחודש ועד היום האחרון שלו).`,
 } as const;
 
 function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1;
 }
 
+function lastDayOf(month: string): string {
+  const [year, m] = month.split("-").map(Number);
+  const day = new Date(Date.UTC(year, m, 0)).getUTCDate();
+  return `${month.slice(0, 8)}${String(day).padStart(2, "0")}`;
+}
+
+// From the 1st to the last day of the same calendar month
+export function isFullMonth(period: ImportPeriod): boolean {
+  if (!isDateString(period.from) || !isDateString(period.to)) return false;
+  return period.from.endsWith("-01") && period.to === lastDayOf(period.from);
+}
+
 // null when the period is usable, otherwise the reason (Hebrew)
 export function periodError(period: ImportPeriod): string | null {
   if (!isDateString(period.from) || !isDateString(period.to)) return PERIOD_MESSAGES.missing;
   if (period.to < period.from) return PERIOD_MESSAGES.order;
-  if (daysBetween(period.from, period.to) > MAX_PERIOD_DAYS) return PERIOD_MESSAGES.tooLong;
+  if (daysBetween(period.from, period.to) > MAX_PERIOD_DAYS && !isFullMonth(period)) return PERIOD_MESSAGES.tooLong;
   return null;
+}
+
+// The Sunday of every week with days in a full month
+export function monthWeeks(period: ImportPeriod): string[] {
+  const weeks: string[] = [];
+  for (let week = startOfWeek(period.from); week <= period.to; week = addDays(week, 7)) weeks.push(week);
+  return weeks;
+}
+
+export type WeekShare = { weekStart: string } & Record<ValueField, number | null>;
+
+// Splits a full month's totals into its weeks by days (ADR-16). Each week row
+// holds a whole week at the month's daily pace, so that the month's total,
+// calculated from the weeks by their days in the month (ADR-1), equals the
+// file's total. A week shared with the next or previous month gets the pace
+// of this month for all its days. Whole numbers (leads, deals, customers) are
+// spread with the largest remainder, so they add up to the file's total.
+export function splitMonth(period: ImportPeriod, totals: Record<ValueField, number | null>): WeekShare[] {
+  const days = daysBetween(period.from, period.to);
+  const weeks = monthWeeks(period).map((weekStart) => {
+    const first = weekStart < period.from ? period.from : weekStart;
+    const lastDay = addDays(weekStart, 6) > period.to ? period.to : addDays(weekStart, 6);
+    return { weekStart, inMonth: daysBetween(first, lastDay) };
+  });
+  const result: WeekShare[] = weeks.map(({ weekStart }) => ({ weekStart }) as WeekShare);
+
+  for (const field of VALUE_FIELDS) {
+    const total = totals[field];
+    if (total === null) {
+      result.forEach((row) => (row[field] = null));
+      continue;
+    }
+    if (!INTEGER_FIELDS.includes(field)) {
+      // A full week at the daily pace, in agorot
+      result.forEach((row) => (row[field] = Math.round((total / days) * 7 * 100) / 100));
+      continue;
+    }
+    // Whole numbers: each week's share of the month, rounded so the shares add up
+    const exact = weeks.map((w) => (total * w.inMonth) / days);
+    const shares = exact.map(Math.floor);
+    let left = total - shares.reduce((a, b) => a + b, 0);
+    const order = exact.map((value, i) => ({ i, rest: value - Math.floor(value) })).sort((a, b) => b.rest - a.rest);
+    for (const { i } of order) {
+      if (left <= 0) break;
+      shares[i]++;
+      left--;
+    }
+    // A shared week holds a whole week at that pace
+    result.forEach((row, i) => (row[field] = Math.round((shares[i] * 7) / weeks[i].inMonth)));
+  }
+  return result;
 }
 
 // The Sunday of the week that holds most of the period's days; on a tie,

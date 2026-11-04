@@ -20,15 +20,20 @@ export type PreviewSummary = {
   newCampaigns: { name: string; platform: Platform }[];
   errors: RowError[];
   adjusted: AdjustedDate[];
+  // A full month as the period: how many weeks each row was split into (ADR-16)
+  monthWeeks: number | null;
 };
 
-// Import into one campaign: the file's rows added up into one week
+// Import into one campaign: the file's rows added up into one week, or for a
+// full month, split into the month's weeks
 export type CampaignPreview = {
   weekStart: string;
   crossesWeeks: boolean;
   totals: WeekValues;
-  // The week's stored values, when it already has data
+  // The week's stored values, when it already has data (one week only)
   existing: WeekValues | null;
+  // A full month: the weeks it is split into, and how many already have data
+  month: { weeks: string[]; existingWeeks: number } | null;
   rowsSummed: number;
   rowsSkipped: number;
   errors: RowError[];

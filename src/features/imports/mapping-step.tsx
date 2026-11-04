@@ -7,11 +7,14 @@ import { ChoiceSelect, type Choice } from "@/components/forms/choice-select";
 import { PlatformLogo } from "@/components/campaigns/platform-logo";
 import { PLATFORMS, PLATFORM_LABELS } from "@/lib/campaigns/platforms";
 import { formatWeekRange } from "@/lib/dates/week";
+import { formatMonthLabel } from "@/lib/dates/month";
 import {
   FIELD_LABELS,
   MAX_PERIOD_DAYS,
   VALUE_FIELDS,
+  isFullMonth,
   isPlatformValue,
+  monthWeeks,
   missingCampaignMapping,
   missingMapping,
   periodCrossesWeeks,
@@ -90,7 +93,9 @@ export function MappingStep({
   const periodProblem = mapping.period && from && to ? periodError(mapping.period) : null;
 
   let dateSample: ReactNode = "—";
-  if (mapping.period && from && to && !periodProblem) {
+  if (mapping.period && from && to && !periodProblem && isFullMonth(mapping.period)) {
+    dateSample = `${formatMonthLabel(`${from.slice(0, 7)}-01`)}, מחולק ל-${monthWeeks(mapping.period).length} שבועות`;
+  } else if (mapping.period && from && to && !periodProblem) {
     dateSample = (
       <>
         שבוע <span dir="ltr">{formatWeekRange(periodWeek(mapping.period))}</span>
@@ -222,6 +227,7 @@ export function MappingStep({
 
       <p className="type-small text-muted-foreground">
         הנתונים נשמרים לשבוע של התאריכים שנבחרו (עד {MAX_PERIOD_DAYS} ימים). טווח שעובר בין שני שבועות נשמר לשבוע שבו רוב הימים.
+        {" "}אפשר לבחור גם חודש מלא (מה-1 בחודש ועד היום האחרון שלו): הסכומים יחולקו בין שבועות החודש לפי מספר הימים, וזו הערכה.
         {!forCampaign && " קובץ עם כמה שבועות אפשר לייבא עם עמודת „תחילת שבוע” כמו בקובץ הדוגמה."}
       </p>
 

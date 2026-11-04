@@ -46,6 +46,12 @@ export function ReviewStep({
         </p>
       )}
 
+      {summary.monthWeeks !== null && (
+        <p role="status" className="type-body">
+          כל שורה בקובץ חולקה ל-{summary.monthWeeks} שבועות של החודש לפי מספר הימים בכל שבוע. הספירה למטה היא של שורות שבוע.
+        </p>
+      )}
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard label="שורות חדשות" value={summary.newRows} />
         <SummaryCard label="עדכונים לנתונים קיימים" value={summary.updatedRows} />

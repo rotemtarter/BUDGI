@@ -3,7 +3,9 @@ import type { Platform } from "@/lib/campaigns/platforms";
 import {
   FIELD_LABELS,
   INTEGER_FIELDS,
+  isFullMonth,
   periodWeek,
+  splitMonth,
   MAX_CAMPAIGN_NAME,
   VALUE_FIELDS,
   type ColumnMapping,
@@ -40,7 +42,8 @@ export type ValidatedRows = {
 const NO_VALUE_MESSAGE = "אין בשורה אף ערך מספרי";
 
 // Checks every row against the mapping (PRD 3.4). Two rows for the same
-// campaign and week are both errors.
+// campaign and week are both errors. With a full month as the period, every
+// row is split into the month's weeks (ADR-16).
 export function validateRows(table: ImportTable, mapping: ColumnMapping): ValidatedRows {
   const cellOf = (cells: Cell[], index: number | null): Cell => (index === null ? null : (cells[index] ?? null));
   const candidates: ValidRow[] = [];
@@ -98,9 +101,14 @@ export function validateRows(table: ImportTable, mapping: ColumnMapping): Valida
       continue;
     }
 
+    const key = campaignKey(name, platform);
+    if (mapping.period && isFullMonth(mapping.period)) {
+      for (const week of splitMonth(mapping.period, values)) candidates.push({ line, key, name, platform, ...week });
+      continue;
+    }
     const weekStart = startOfWeek(date);
     if (weekStart !== date && !mapping.period) adjusted.push({ line, date, weekStart });
-    candidates.push({ line, key: campaignKey(name, platform), name, platform, weekStart, ...values });
+    candidates.push({ line, key, name, platform, weekStart, ...values });
   }
 
   // Same campaign and week twice in the file: every row involved is an error
@@ -116,7 +124,9 @@ export function validateRows(table: ImportTable, mapping: ColumnMapping): Valida
       valid.push(row);
       continue;
     }
-    const others = group.filter((r) => r !== row).map((r) => r.line);
+    // A month row is split into several weeks: report each line once
+    if (errors.some((e) => e.line === row.line)) continue;
+    const others = [...new Set(group.filter((r) => r.line !== row.line).map((r) => r.line))];
     errors.push({ line: row.line, reasons: [`כפולה: אותו קמפיין ואותו שבוע מופיעים גם בשורה ${others.join(", ")}`] });
   }
 

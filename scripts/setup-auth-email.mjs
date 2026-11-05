@@ -33,12 +33,9 @@ if (!token) {
   process.exit(1);
 }
 
-const template = (title, text, href, link, ignore) => `<div dir="rtl" style="font-family:Arial,sans-serif">
-<h2>${title}</h2>
-<p>${text}</p>
-<p><a href="${href}">${link}</a></p>
-<p>${ignore}</p>
-</div>`;
+// The branded templates, kept in the repository (supabase/email-templates)
+import { readFileSync } from "node:fs";
+const templateFile = (name) => readFileSync(new URL(`../supabase/email-templates/${name}.html`, import.meta.url), "utf8");
 
 const api = `https://api.supabase.com/v1/projects/${target.ref}/config/auth`;
 const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
@@ -66,21 +63,9 @@ const body = {
   password_min_length: 15,
   uri_allow_list: [...allowList].join(","),
   mailer_subjects_confirmation: "אישור ההרשמה ל-Budgi",
-  mailer_templates_confirmation_content: template(
-    "ברוכים הבאים ל-Budgi",
-    "כדי להשלים את ההרשמה, לחץ על הקישור:",
-    "{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/onboarding",
-    "אישור כתובת האימייל",
-    "אם לא נרשמת ל-Budgi, אפשר להתעלם מהמייל.",
-  ),
+  mailer_templates_confirmation_content: templateFile("confirm-signup"),
   mailer_subjects_recovery: "איפוס הסיסמה ב-Budgi",
-  mailer_templates_recovery_content: template(
-    "בחירת סיסמה חדשה",
-    "לחץ על הקישור כדי לבחור סיסמה חדשה:",
-    "{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password",
-    "בחירת סיסמה חדשה",
-    "אם לא ביקשת לאפס סיסמה, אפשר להתעלם מהמייל.",
-  ),
+  mailer_templates_recovery_content: templateFile("reset-password"),
 };
 
 const saved = await fetch(api, { method: "PATCH", headers, body: JSON.stringify(body) });
